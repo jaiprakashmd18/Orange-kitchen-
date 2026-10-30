@@ -36,7 +36,7 @@ export default async function AdminDashboard() {
   const checklist = [
     { ok: integ.supabase, label: "Supabase service key configured" },
     { ok: integ.razorpay, label: `Razorpay keys configured (${integ.razorpayMode} mode)` },
-    { ok: integ.razorpayWebhook, label: "Razorpay webhook secret configured" },
+    { ok: integ.razorpayWebhook, label: "Razorpay webhook (optional — payments are also auto-reconciled)" },
     { ok: (published.count ?? 0) > 0, label: `Menu published (${published.count ?? 0} dishes live, ${drafts.count ?? 0} drafts need prices)`, href: "/admin/menu" },
     { ok: Boolean(settings.data?.logo_url), label: "Logo uploaded", href: "/admin/settings" },
     { ok: (hours.count ?? 0) > 0, label: "Opening hours set", href: "/admin/hours" },
@@ -45,7 +45,7 @@ export default async function AdminDashboard() {
     { ok: Boolean(settings.data?.email && settings.data?.whatsapp), label: "Email & WhatsApp contact added", href: "/admin/settings" },
     { ok: integ.email, label: "Email notifications (Resend) configured" },
     { ok: integ.whatsapp, label: "WhatsApp notifications configured (optional)" },
-    { ok: integ.cron, label: "Cron secret configured (expires unpaid orders)" },
+    { ok: integ.cron, label: "Cron secret (optional — upkeep also runs automatically)" },
     { ok: Boolean(settings.data?.accepting_orders), label: "Accepting online orders", href: "/admin/settings" },
   ];
   const pendingSetup = checklist.filter((c) => !c.ok);

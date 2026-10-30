@@ -3,7 +3,7 @@ import { ActionForm, SubmitButton } from "@/components/admin/ActionForm";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DAY_NAMES, formatClock } from "@/lib/format";
-import { generateSlots, updateSlot } from "../settings/actions";
+import { generateSlots, slotsFromHours, updateSlot } from "../settings/actions";
 import type { PickupSlot } from "@/lib/types";
 
 export const metadata = { title: "Pickup slots" };
@@ -16,8 +16,17 @@ export default async function SlotsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Takeaway pickup slots" description="Customers choose one of these times for today or tomorrow. Each slot has a maximum number of orders." />
+      <section className="card border-brand-200 bg-brand-50/40 p-5">
+        <h2 className="mb-1 font-sans font-bold">Quick setup</h2>
+        <p className="mb-3 text-sm text-charcoal-500">Create pickup slots for every opening-hours window in one click.</p>
+        <ActionForm action={slotsFromHours} className="flex flex-wrap items-end gap-3">
+          <label><span className="label">Slot length (min)</span><input type="number" name="interval" defaultValue={30} min={10} max={240} className="input w-28" /></label>
+          <label><span className="label">Orders per slot</span><input type="number" name="max_orders" defaultValue={10} min={1} max={500} className="input w-28" /></label>
+          <SubmitButton>Generate from opening hours</SubmitButton>
+        </ActionForm>
+      </section>
       <section className="card p-5">
-        <h2 className="mb-3 font-sans font-bold">Create slots</h2>
+        <h2 className="mb-3 font-sans font-bold">Create slots manually</h2>
         <ActionForm action={generateSlots} className="space-y-3">
           <div className="flex flex-wrap gap-2">
             {[1, 2, 3, 4, 5, 6, 0].map((d) => (

@@ -3,11 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getOrderDetail } from "@/lib/order-queries";
+import { reconcileOrder } from "@/lib/maintenance";
 import { getSettings, fullAddress, mapsLink } from "@/lib/data";
 import { STATUS_LABEL, STATUS_TONE } from "@/lib/order-status";
 import { formatClock, formatDate, formatDateTime, formatINR, formatPhone, formatTime, telHref } from "@/lib/format";
 import { OrderTimeline } from "@/components/orders/OrderTimeline";
 import { RealtimeRefresher } from "@/components/orders/RealtimeRefresher";
+import { PendingPaymentPoller } from "@/components/orders/PendingPaymentPoller";
 import { CancelOrderButton, RetryPaymentButton } from "@/components/orders/OrderActions";
 import { ReviewForm } from "@/components/orders/ReviewForm";
 import { Badge } from "@/components/ui/Badge";
@@ -31,8 +33,14 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const { id } = await params;
   const sp = await searchParams;
   const user = await requireUser(`/orders/${id}`);
-  const [detail, settings] = await Promise.all([getOrderDetail(id), getSettings()]);
+  const settings = await getSettings();
+  let detail = await getOrderDetail(id);
   if (!detail) notFound();
+  // Unpaid order: ask Razorpay directly so a lost callback/webhook still confirms it.
+  if (detail.order.customer_id === user.id && ["pending_payment", "payment_failed", "expired"].includes(detail.order.status)) {
+    await reconcileOrder(detail.order.id).catch((e) => console.error("[reconcile]", e));
+    detail = (await getOrderDetail(id)) ?? detail;
+  }
   const { order, items, history, payment, assignment, review } = detail;
   const isOwner = order.customer_id === user.id;
   const unpaid = ["pending_payment", "payment_failed"].includes(order.status) && new Date(order.payment_due_at) > new Date();
@@ -41,6 +49,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   return (
     <div className="container-page py-10 sm:py-14">
       <RealtimeRefresher orderId={order.id} />
+      {isOwner && order.status === "pending_payment" && <PendingPaymentPoller />}
       {sp.placed && order.status === "pending_payment" && (
         <div className="mb-6 rounded-2xl bg-brand-50 px-5 py-4 text-sm text-brand-800" role="status">
           We&apos;re confirming your payment with the bank. This page will update automatically.

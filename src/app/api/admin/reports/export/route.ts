@@ -18,8 +18,8 @@ function csv(rows: (string | number | null | undefined)[][]) {
 
 export async function GET(req: NextRequest) {
   try {
-    const { user } = await assertRole(["admin"]);
     const sp = req.nextUrl.searchParams;
+    const { user } = await assertRole(sp.get("type") === "menu" ? ["admin", "staff"] : ["admin"]);
     const today = nowInIST().date;
     const d = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : today);
     const from = d(sp.get("from"));
@@ -61,6 +61,20 @@ export async function GET(req: NextRequest) {
       if (error) throw error;
       rows = [["Dish", "Quantity", "Revenue"]];
       for (const r of (data ?? []) as { item_name: string; quantity: number; revenue: number }[]) rows.push([r.item_name, r.quantity, r.revenue]);
+    } else if (type === "menu") {
+      const [{ data: cats }, { data: items, error }] = await Promise.all([
+        supabase.from("menu_categories").select("id, name, parent_id"),
+        supabase.from("menu_items").select("name, price, is_veg, description, image_url, is_published, is_available, is_popular, category_id, sort_order").order("sort_order"),
+      ]);
+      if (error) throw error;
+      const byId = new Map((cats ?? []).map((c) => [c.id, c]));
+      const yn = (b: boolean | null) => (b === null ? "" : b ? "yes" : "no");
+      rows = [["category", "subcategory", "name", "price", "veg", "description", "image_url", "published", "available", "popular"]];
+      for (const i of items ?? []) {
+        const c = byId.get(i.category_id);
+        const parent = c?.parent_id ? byId.get(c.parent_id) : null;
+        rows.push([parent ? parent.name : c?.name ?? "", parent ? c?.name ?? "" : "", i.name, i.price, i.is_veg === null ? "" : i.is_veg ? "veg" : "non-veg", i.description, i.image_url, yn(i.is_published), yn(i.is_available), yn(i.is_popular)]);
+      }
     } else {
       return NextResponse.json({ error: "Unknown export type" }, { status: 400 });
     }
@@ -69,7 +83,7 @@ export async function GET(req: NextRequest) {
     return new NextResponse(csv(rows), {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="orange-kitchen-${type}-${from}-to-${to}.csv"`,
+        "Content-Disposition": type === "menu" ? `attachment; filename="orange-kitchen-menu.csv"` : `attachment; filename="orange-kitchen-${type}-${from}-to-${to}.csv"`,
         "Cache-Control": "no-store",
       },
     });

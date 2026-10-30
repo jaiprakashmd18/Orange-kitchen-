@@ -3,6 +3,8 @@ import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { getSettings } from "@/lib/data";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { after } from "next/server";
+import { runMaintenance } from "@/lib/maintenance";
 
 export const metadata: Metadata = { title: { default: "Admin", template: "%s · Admin · Orange Kitchen" }, robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -10,6 +12,8 @@ export const dynamic = "force-dynamic";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, roles } = await requireRole(["admin", "staff"], "/admin");
   const settings = await getSettings();
+  // Keep payments/expiry reconciled even without a webhook or cron (throttled).
+  after(() => runMaintenance().catch((e) => console.error("[maintenance]", e)));
   return (
     <div className="min-h-dvh bg-[#F7F4F0] lg:grid lg:grid-cols-[250px_1fr]">
       <aside className="bg-charcoal p-4 text-white lg:sticky lg:top-0 lg:h-dvh lg:overflow-y-auto lg:p-5">

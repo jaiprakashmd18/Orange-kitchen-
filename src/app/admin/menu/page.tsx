@@ -45,7 +45,7 @@ export default async function AdminMenu({ searchParams }: { searchParams: Promis
       <PageHeader
         title="Dishes"
         description={`${all.length} dishes · ${drafts} not published${drafts ? " (add price & veg/non-veg to publish)" : ""}`}
-        actions={<><Link href="/admin/categories" className="btn-secondary">Categories</Link><Link href="/admin/menu/new" className="btn-primary">+ Add dish</Link></>}
+        actions={<><Link href="/admin/categories" className="btn-secondary">Categories</Link><Link href="/admin/menu/import" className="btn-secondary">Import CSV</Link><Link href="/admin/menu/new" className="btn-primary">+ Add dish</Link></>}
       />
       {sp.deleted && <p className="mb-4 text-sm text-leaf">Dish deleted.</p>}
       {all.length === 0 ? (

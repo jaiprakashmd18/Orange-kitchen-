@@ -7,7 +7,17 @@ const PROTECTED_PREFIXES = ["/account", "/checkout", "/admin", "/delivery", "/or
 /** Refreshes the auth session cookie and redirects anonymous users away from protected areas. */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
-  if (!isSupabaseConfigured) return response;
+  if (!isSupabaseConfigured) {
+    // Not connected yet: send login/admin/checkout traffic to the setup guide.
+    const p = request.nextUrl.pathname;
+    if (/^\/(auth|admin|account|checkout|delivery|orders)(\/|$)/.test(p)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/setup";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    return response;
+  }
 
   const supabase = createServerClient(publicEnv.supabaseUrl, publicEnv.supabaseAnonKey, {
     cookies: {

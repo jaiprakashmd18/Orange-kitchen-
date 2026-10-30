@@ -191,3 +191,20 @@ export const saveCoupon = adminAction({ audit: "coupon.saved", revalidate: ["/ad
   else check(await supabase.from("coupons").insert(row));
   return { message: "Coupon saved.", entityId: code };
 });
+
+/** Creates pickup slots covering every opening-hours window. */
+export const slotsFromHours = adminAction({ audit: "pickup_slots.generated_from_hours", revalidate: ["/admin/pickup-slots"] }, async (f) => {
+  const every = num(f, "interval") ?? 30;
+  const cap = num(f, "max_orders") ?? 10;
+  if (every < 10 || every > 240) throw new HttpError(400, "Slot length must be 10–240 minutes.");
+  const supabase = await createClient();
+  const { data: hours } = await supabase.from("operating_hours").select("day_of_week, open_time, close_time");
+  if (!hours?.length) throw new HttpError(400, "Set opening hours first (Admin → Hours & holidays).");
+  const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const fmt = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+  const rows = [];
+  for (const h of hours) for (let m = toMin(h.open_time); m + every <= toMin(h.close_time); m += every) rows.push({ day_of_week: h.day_of_week, start_time: fmt(m), end_time: fmt(m + every), max_orders: cap, is_active: true });
+  if (!rows.length) throw new HttpError(400, "Opening windows are shorter than one slot.");
+  check(await supabase.from("pickup_slots").upsert(rows, { onConflict: "day_of_week,start_time" }));
+  return { message: `${rows.length} pickup slots created from your opening hours.` };
+});

@@ -56,6 +56,15 @@ export function fetchPayment(paymentId: string) {
   return call<RazorpayPayment>(`/payments/${encodeURIComponent(paymentId)}`);
 }
 
+export async function fetchOrderPayments(orderId: string) {
+  const res = await call<{ items: RazorpayPayment[] }>(`/orders/${encodeURIComponent(orderId)}/payments`);
+  return res.items ?? [];
+}
+
+export function fetchRefund(paymentId: string, refundId: string) {
+  return call<RazorpayRefund>(`/payments/${encodeURIComponent(paymentId)}/refunds/${encodeURIComponent(refundId)}`);
+}
+
 export function capturePayment(paymentId: string, amountPaise: number) {
   return call<RazorpayPayment>(`/payments/${encodeURIComponent(paymentId)}/capture`, {
     method: "POST",
