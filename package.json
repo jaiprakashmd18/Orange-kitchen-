@@ -10,7 +10,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
-    "db:test": "bash scripts/test-migrations.sh"
+    "db:test": "bash scripts/test-migrations.sh",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -34,6 +35,7 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^15.5.28",
     "postcss": "^8.4.49",
+    "sharp": "^0.35.5",
     "tailwindcss": "^3.4.19",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"
