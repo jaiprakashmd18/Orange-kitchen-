@@ -238,6 +238,8 @@ create table public.restaurant_settings (
   prep_time_minutes int not null default 30 check (prep_time_minutes between 5 and 240),
   payment_window_minutes int not null default 20 check (payment_window_minutes between 5 and 120),
   pickup_instructions text,
+  about_story text,                                  -- "Our story" (written by the restaurant)
+  gallery_urls text[] not null default '{}',         -- restaurant photographs
   cancellation_policy text,
   refund_policy text,
   gstin text,

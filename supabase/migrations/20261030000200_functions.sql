@@ -482,17 +482,93 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
+-- Atomic order creation (order + items + pickup capacity check).
+-- Totals are computed by the application server from DB prices and
+-- passed in; this function only persists them consistently.
+-- ---------------------------------------------------------------------
+create or replace function public.create_order_with_items(p_order jsonb, p_items jsonb)
+returns public.orders
+language plpgsql security definer set search_path = public as $$
+declare
+  v_order public.orders%rowtype;
+  v_slot public.pickup_slots%rowtype;
+  v_used int;
+begin
+  if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
+    raise exception 'EMPTY_ORDER' using errcode = 'P0001';
+  end if;
+
+  if (p_order ->> 'fulfillment') = 'takeaway' then
+    select * into v_slot from public.pickup_slots where id = (p_order ->> 'pickup_slot_id')::uuid and is_active for update;
+    if not found then
+      raise exception 'SLOT_UNAVAILABLE' using errcode = 'P0001';
+    end if;
+    select count(*) into v_used from public.orders
+     where pickup_slot_id = v_slot.id and pickup_date = (p_order ->> 'pickup_date')::date
+       and status not in ('expired', 'cancelled', 'rejected', 'payment_failed');
+    if v_used >= v_slot.max_orders then
+      raise exception 'SLOT_FULL' using errcode = 'P0001';
+    end if;
+  end if;
+
+  insert into public.orders (
+    customer_id, idempotency_key, fulfillment, subtotal, discount_amount, delivery_fee, packaging_charge,
+    tax_amount, total_amount, coupon_id, coupon_code, special_instructions, delivery_address,
+    serviceable_area_id, delivery_mode, pickup_slot_id, pickup_date, pickup_time, customer_name,
+    customer_phone, customer_email, estimated_ready_at, estimated_delivery_at, payment_due_at
+  ) values (
+    (p_order ->> 'customer_id')::uuid,
+    p_order ->> 'idempotency_key',
+    (p_order ->> 'fulfillment')::public.fulfillment_type,
+    (p_order ->> 'subtotal')::numeric,
+    coalesce((p_order ->> 'discount_amount')::numeric, 0),
+    coalesce((p_order ->> 'delivery_fee')::numeric, 0),
+    coalesce((p_order ->> 'packaging_charge')::numeric, 0),
+    coalesce((p_order ->> 'tax_amount')::numeric, 0),
+    (p_order ->> 'total_amount')::numeric,
+    nullif(p_order ->> 'coupon_id', '')::uuid,
+    nullif(p_order ->> 'coupon_code', ''),
+    nullif(p_order ->> 'special_instructions', ''),
+    p_order -> 'delivery_address',
+    nullif(p_order ->> 'serviceable_area_id', '')::uuid,
+    nullif(p_order ->> 'delivery_mode', '')::public.delivery_mode,
+    nullif(p_order ->> 'pickup_slot_id', '')::uuid,
+    nullif(p_order ->> 'pickup_date', '')::date,
+    nullif(p_order ->> 'pickup_time', '')::time,
+    p_order ->> 'customer_name',
+    p_order ->> 'customer_phone',
+    nullif(p_order ->> 'customer_email', ''),
+    nullif(p_order ->> 'estimated_ready_at', '')::timestamptz,
+    nullif(p_order ->> 'estimated_delivery_at', '')::timestamptz,
+    (p_order ->> 'payment_due_at')::timestamptz
+  ) returning * into v_order;
+
+  insert into public.order_items (order_id, menu_item_id, item_name, is_veg, unit_price, quantity, selected_options, line_total)
+  select v_order.id, (i ->> 'menu_item_id')::uuid, i ->> 'item_name', (i ->> 'is_veg')::boolean,
+         (i ->> 'unit_price')::numeric, (i ->> 'quantity')::int, coalesce(i -> 'selected_options', '[]'::jsonb),
+         (i ->> 'line_total')::numeric
+    from jsonb_array_elements(p_items) as i;
+
+  insert into public.order_status_history (order_id, from_status, to_status, actor_id, actor_role, note)
+  values (v_order.id, null, 'pending_payment', v_order.customer_id, 'customer', 'Order placed');
+
+  return v_order;
+end $$;
+
+-- ---------------------------------------------------------------------
 -- Privileges: mutating functions are service-role only
 -- ---------------------------------------------------------------------
 revoke execute on function public.transition_order_status(uuid, public.order_status, uuid, text, text) from public, anon, authenticated;
 revoke execute on function public.confirm_payment(text, text, numeric, text, text) from public, anon, authenticated;
 revoke execute on function public.record_payment_failure(text, text, text) from public, anon, authenticated;
 revoke execute on function public.expire_unpaid_orders() from public, anon, authenticated;
+revoke execute on function public.create_order_with_items(jsonb, jsonb) from public, anon, authenticated;
 revoke execute on function public.check_rate_limit(text, int, int) from public, anon, authenticated;
 revoke execute on function public.pickup_slot_usage(date) from public, anon;
 grant execute on function public.transition_order_status(uuid, public.order_status, uuid, text, text) to service_role;
 grant execute on function public.confirm_payment(text, text, numeric, text, text) to service_role;
 grant execute on function public.record_payment_failure(text, text, text) to service_role;
 grant execute on function public.expire_unpaid_orders() to service_role;
+grant execute on function public.create_order_with_items(jsonb, jsonb) to service_role;
 grant execute on function public.check_rate_limit(text, int, int) to service_role;
 grant execute on function public.pickup_slot_usage(date) to authenticated, service_role;
