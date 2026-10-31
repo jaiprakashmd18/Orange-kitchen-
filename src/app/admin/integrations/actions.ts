@@ -113,7 +113,11 @@ export const saveSupabaseToken = adminAction({ ...A, audit: "integration.supabas
     ? { host: c.smtp_host, port: Number(c.smtp_port || 465), user: c.smtp_user, pass: c.smtp_pass, senderEmail: c.smtp_sender_email || c.smtp_user, senderName: c.smtp_sender_name || "Orange Kitchen" }
     : null;
   const origin = await requestOrigin();
-  await configureAuth(token, origin, smtp);
+  try {
+    await configureAuth(token, origin, smtp);
+  } catch (e) {
+    throw new HttpError(400, `Token saved, but the login settings couldn't be applied. ${(e as Error).message}`);
+  }
   return { message: `Connected. Login links now point to ${origin}${smtp ? " and login emails come from " + smtp.user : ""}.` };
 });
 

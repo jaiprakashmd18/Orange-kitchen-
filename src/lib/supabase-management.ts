@@ -24,9 +24,19 @@ export async function requestOrigin() {
 
 // What each call needs, so a scoped token with missing permissions gets a clear message.
 const NEEDS: Record<string, string> = {
-  project: "Project → read access",
-  sql: "Database → read & write (SQL) access",
-  auth: "Application services → Auth → read & write access",
+  project: "Project → Read",
+  sql: "Database → Read & Write",
+  auth: "Project → Read & Write, and Application services → Auth → Read & Write",
+};
+
+// Supabase's permission ids → where to find them on the token screen.
+const PERMISSION_HINTS: Record<string, string> = {
+  auth_config_write: "Application services → Auth (config) → Write",
+  auth_config_read: "Application services → Auth (config) → Read",
+  project_admin_write: "Project → Admin / settings → Write",
+  project_admin_read: "Project → Admin / settings → Read",
+  database_write: "Database → Write",
+  database_read: "Database → Read",
 };
 
 async function api(token: string, pathname: string, init: RequestInit = {}, needs?: keyof typeof NEEDS) {
@@ -38,7 +48,11 @@ async function api(token: string, pathname: string, init: RequestInit = {}, need
   });
   const text = await res.text();
   if (res.status === 401) throw new Error("Supabase says this token is invalid or expired. Create a new token and paste it again.");
-  if (res.status === 403 && needs) throw new Error(`This token doesn't have permission for: ${NEEDS[needs]}. Edit the token's permissions (or create a new one) and try again.`);
+  if (res.status === 403) {
+    const listed = [...text.matchAll(/[a-z]+(?:_[a-z]+)+/g)].map((m) => m[0]).filter((p) => p in PERMISSION_HINTS);
+    const what = listed.length ? [...new Set(listed)].map((p) => `${PERMISSION_HINTS[p]} (${p})`).join("; ") : needs ? NEEDS[needs] : text.slice(0, 200);
+    throw new Error(`This token is missing permission: ${what}. Create a new token with these permissions (or use “Create legacy token”) and paste it again.`);
+  }
   if (!res.ok) {
     let msg = text.slice(0, 300);
     try {
