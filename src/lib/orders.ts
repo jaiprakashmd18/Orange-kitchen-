@@ -9,6 +9,7 @@ import { isOpenAt, itemAvailableAt, upcomingPickupOptions, type PickupOption } f
 import { istDateTime } from "@/lib/format";
 import { createRazorpayOrder, refundPayment } from "@/lib/razorpay";
 import { availablePaymentMethods } from "@/lib/payment-methods";
+import { getConfig } from "@/lib/config";
 import { dispatchOrderNotifications } from "@/lib/notifications/dispatch";
 import type {
   Address,
@@ -220,7 +221,7 @@ async function sessionFor(order: Order, payment: Payment): Promise<PaymentSessio
     order_number: order.order_number,
     razorpay_order_id: payment.provider_order_id,
     amount_paise: toPaise(payment.amount),
-    key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "",
+    key_id: (await getConfig()).razorpay_key_id,
     prefill: { name: order.customer_name, email: order.customer_email ?? "", contact: order.customer_phone },
   };
 }
@@ -256,7 +257,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PaymentSession
   if (result.blockers.length) throw new HttpError(422, result.blockers[0], "NOT_ORDERABLE");
 
   const { quote, settings, area, pickup } = result;
-  if (!availablePaymentMethods(settings).includes(input.payment_method)) {
+  if (!(await availablePaymentMethods(settings)).includes(input.payment_method)) {
     throw new HttpError(422, "That payment method is not available right now. Please choose another.", "PAYMENT_METHOD_UNAVAILABLE");
   }
   const name = address?.full_name ?? profile?.full_name ?? "";

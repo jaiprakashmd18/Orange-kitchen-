@@ -42,6 +42,9 @@ export async function requireRole(roles: AppRole[], next = "/") {
       await grantAdmin(user.id);
       mine = [...mine, "admin"];
     } else {
+      // Brand-new site with no owner yet → the setup wizard.
+      const { hasAdmin } = await import("@/app/setup/actions");
+      if (!(await hasAdmin())) redirect("/setup");
       redirect(`/auth/login?error=forbidden&next=${encodeURIComponent(next)}`);
     }
   }

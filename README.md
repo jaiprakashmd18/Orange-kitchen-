@@ -18,15 +18,13 @@ delivery management, live order tracking, notifications, admin dashboard, report
 Next.js 15 (App Router, TypeScript) · Tailwind CSS · Framer Motion · Supabase (Postgres, Auth, Storage,
 Realtime, RLS) · Razorpay · Resend (email, optional) · WhatsApp Cloud API (optional) · Vercel.
 
-## Go live: add keys, deploy
-1. Create a **Supabase** project and a **Razorpay** account (test mode).
-2. Import this repo in **Vercel** and paste the keys listed in [`.env.example`](.env.example) (Supabase URL / anon / service role / DB URL / access token, `ADMIN_EMAIL` + `ADMIN_PASSWORD`, Razorpay key id + secret).
-3. **Deploy.** The build automatically migrates the database, creates your admin login, configures Supabase Auth and verifies the Razorpay keys.
-4. Log in at `/admin`, upload the logo, import the menu CSV with prices, set hours, delivery areas and slots, and switch **Accepting online orders** on.
+## Easy setup — no code, no env variables to copy
+1. **Supabase**: create a free project (region Mumbai).
+2. **Vercel**: import this repo → Deploy → Integrations → **Supabase → Connect** → Redeploy.
+3. **Open your site**: it shows *Set up your website*. Paste a Supabase access token, choose your owner email and password, and click once. The database and admin login are created for you.
+4. **Admin**: Settings (UPI ID for GPay), Integrations (Gmail, Razorpay: paste and test), Dishes → Import CSV, **Go online**.
 
-Step-by-step guide: [docs/SETUP.md](docs/SETUP.md). If a key is missing, `/setup` on the site tells you which.
-
-Local: `npm install && cp .env.example .env.local && npm run setup && npm run dev`.
+Full guide: [docs/SETUP.md](docs/SETUP.md). Environment variables still work and take precedence (see [`.env.example`](.env.example)).
 
 ## Scripts
 | Command | What it does |

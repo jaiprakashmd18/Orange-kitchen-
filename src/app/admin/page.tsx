@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { RealtimeRefresher } from "@/components/orders/RealtimeRefresher";
 import { presetRanges, salesSummary, topItems } from "@/lib/reports";
 import { createClient } from "@/lib/supabase/server";
-import { integrationStatus } from "@/lib/env";
+import { getIntegrationStatus } from "@/lib/config";
 import { formatDateTime, formatINR } from "@/lib/format";
 import { STATUS_LABEL, STATUS_TONE } from "@/lib/order-status";
 import { getRoles } from "@/lib/auth";
@@ -34,29 +34,25 @@ export default async function AdminDashboard() {
     getRoles(),
   ]);
   const [hours, areas, slots, published, drafts, settings, upiToVerify] = setup;
+  const integ = await getIntegrationStatus();
   const upiReady = Boolean(settings.data?.upi_enabled && settings.data?.upi_id);
   const live = Boolean(settings.data?.accepting_orders);
   // Things that would stop a customer from completing an order right now.
   const blockers = [
-    !(upiReady || integrationStatus().razorpay) && { label: "Add a payment method — your UPI ID (Settings) or Razorpay keys", href: "/admin/settings" },
+    !(upiReady || integ.razorpay) && { label: "Add a payment method — your UPI ID (Settings) or Razorpay keys (Integrations)", href: "/admin/settings" },
     (published.count ?? 0) === 0 && { label: "Publish at least one dish with a price", href: "/admin/menu" },
     settings.data?.delivery_enabled !== false && (areas.count ?? 0) === 0 && { label: "Add delivery pincodes (or turn off delivery)", href: "/admin/delivery-areas" },
     settings.data?.takeaway_enabled !== false && (slots.count ?? 0) === 0 && { label: "Create pickup slots (or turn off takeaway)", href: "/admin/pickup-slots" },
   ].filter(Boolean) as { label: string; href: string }[];
-  const integ = integrationStatus();
   const checklist = [
-    { ok: integ.supabase, label: "Supabase service key configured" },
-    { ok: upiReady || integ.razorpay, label: upiReady ? "Payments: UPI to your UPI ID" : integ.razorpay ? `Payments: Razorpay (${integ.razorpayMode} mode)` : "Payment method (UPI ID or Razorpay)", href: "/admin/settings" },
+    { ok: upiReady || integ.razorpay, label: upiReady ? "Payments: UPI to your UPI ID" : integ.razorpay ? `Payments: Razorpay (${integ.razorpayMode} mode)` : "Payment method (UPI ID in Settings, or Razorpay in Integrations)", href: "/admin/settings" },
     { ok: (published.count ?? 0) > 0, label: `Menu published (${published.count ?? 0} dishes live, ${drafts.count ?? 0} drafts need prices)`, href: "/admin/menu" },
-    
     { ok: (hours.count ?? 0) > 0, label: "Opening hours set", href: "/admin/hours" },
     { ok: (areas.count ?? 0) > 0, label: "Delivery areas & fees set", href: "/admin/delivery-areas" },
     { ok: (slots.count ?? 0) > 0, label: "Pickup slots set", href: "/admin/pickup-slots" },
     { ok: Boolean(settings.data?.email && settings.data?.whatsapp), label: "Email & WhatsApp contact added", href: "/admin/settings" },
-    { ok: integ.smtp, label: "Login & sign-up emails from your Gmail/SMTP (recommended)" },
-    { ok: integ.email, label: "Order email notifications" },
-    { ok: integ.whatsapp, label: "WhatsApp notifications configured (optional)" },
-    { ok: integ.cron, label: "Cron secret (optional — upkeep also runs automatically)" },
+    { ok: integ.smtp, label: "Gmail connected for login & order emails (recommended)", href: "/admin/integrations" },
+    { ok: integ.whatsapp, label: "WhatsApp order updates (optional)", href: "/admin/integrations" },
     { ok: Boolean(settings.data?.accepting_orders), label: "Accepting online orders", href: "/admin/settings" },
   ];
   const pendingSetup = checklist.filter((c) => !c.ok);

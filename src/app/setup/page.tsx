@@ -2,101 +2,93 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { integrationStatus } from "@/lib/env";
 import { schemaStatus } from "@/lib/setup-status";
+import { ActionForm, SubmitButton } from "@/components/admin/ActionForm";
+import { completeSetup, hasAdmin } from "./actions";
 
-export const metadata: Metadata = { title: "Setup", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Set up your website", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
-// Shown only until Supabase is connected (there is no admin to protect it yet).
-// Lists which environment variables are present — never their values.
-const GROUPS: { title: string; required: boolean; keys: { name: string; help: string }[] }[] = [
-  {
-    title: "Supabase (required)",
-    required: true,
-    keys: [
-      { name: "NEXT_PUBLIC_SUPABASE_URL", help: "Supabase → Project Settings → API → Project URL" },
-      { name: "NEXT_PUBLIC_SUPABASE_ANON_KEY", help: "Supabase → Project Settings → API → anon public key" },
-      { name: "SUPABASE_SERVICE_ROLE_KEY", help: "Supabase → Project Settings → API → service_role key (secret)" },
-      { name: "SUPABASE_ACCESS_TOKEN", help: "supabase.com/dashboard/account/tokens — sets up the database, login emails & redirects automatically" },
-      { name: "SUPABASE_DB_URL", help: "Optional if the access token is set — Supabase → Connect → Session pooler connection string" },
-    ],
-  },
-  {
-    title: "Admin login (required)",
-    required: true,
-    keys: [
-      { name: "ADMIN_EMAIL", help: "Owner's email — becomes the first admin" },
-      { name: "ADMIN_PASSWORD", help: "At least 10 characters; change it after first login" },
-    ],
-  },
-  {
-    title: "Razorpay (optional — or accept UPI to your own UPI ID, set in Admin → Settings)",
-    required: false,
-    keys: [
-      { name: "NEXT_PUBLIC_RAZORPAY_KEY_ID", help: "Razorpay → Account & Settings → API Keys (rzp_test_… first)" },
-      { name: "RAZORPAY_KEY_SECRET", help: "Shown once when you generate the key" },
-      { name: "RAZORPAY_WEBHOOK_SECRET", help: "Optional — Razorpay → Webhooks; payments are auto-reconciled without it" },
-    ],
-  },
-  {
-    title: "Notifications (optional)",
-    required: false,
-    keys: [
-      { name: "RESEND_API_KEY", help: "resend.com → API Keys" },
-      { name: "EMAIL_FROM", help: 'e.g. "Orange Kitchen <orders@yourdomain.in>" (verified domain)' },
-      { name: "WHATSAPP_ACCESS_TOKEN", help: "Meta WhatsApp Cloud API permanent token" },
-      { name: "WHATSAPP_PHONE_NUMBER_ID", help: "Meta → WhatsApp → API setup" },
-      { name: "WHATSAPP_ORDER_TEMPLATE", help: "Approved template name ({{1}} order, {{2}} status, {{3}} link)" },
-      { name: "PEXELS_API_KEY", help: "Optional — pexels.com/api, for higher-quality automatic dish photos" },
-    ],
-  },
-];
+function Step({ n, title, done, children }: { n: number; title: string; done?: boolean; children?: React.ReactNode }) {
+  return (
+    <section className={`card p-6 ${done ? "opacity-70" : ""}`}>
+      <div className="flex items-center gap-3">
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-white ${done ? "bg-leaf" : "bg-brand-600"}`}>{done ? "✓" : n}</span>
+        <h2 className="font-sans text-lg font-bold">{title}</h2>
+      </div>
+      {children && <div className="mt-4 text-sm text-charcoal-700">{children}</div>}
+    </section>
+  );
+}
 
 export default async function SetupPage() {
-  const integ = integrationStatus();
-  const schema = integ.supabase ? await schemaStatus() : { ready: false, error: null };
-  if (schema.ready) redirect("/admin");
+  const supabaseOk = integrationStatus().supabase;
+  const schema = supabaseOk ? await schemaStatus() : { ready: false, error: null };
+  const adminExists = schema.ready ? await hasAdmin() : false;
+  if (supabaseOk && schema.ready && adminExists) redirect("/admin");
+
   return (
-    <main className="min-h-dvh bg-cream px-4 py-12">
-      <div className="mx-auto max-w-3xl">
-        <p className="eyebrow">Orange Kitchen</p>
-        <h1 className="mt-2 text-4xl">Finish setup by adding your keys</h1>
-        <p className="mt-3 text-charcoal-700">
-          Add these as <strong>Environment Variables</strong> in Vercel (Project → Settings → Environment Variables), or in <code>.env.local</code> when running locally, then
-          <strong> redeploy</strong>. The database, admin account and login settings are set up automatically during the build.
-        </p>
-        {integ.supabase && !schema.ready && (
-          <div className="mt-6 rounded-2xl border border-red-200 bg-chilli-50 p-5 text-sm text-chilli" role="alert">
-            <p className="font-bold">Keys found, but the database is not set up yet.</p>
-            <p className="mt-1 text-charcoal-700">Database says: <code>{schema.error}</code></p>
-            <p className="mt-2 text-charcoal-700">
-              Add <code>SUPABASE_ACCESS_TOKEN</code> (supabase.com/dashboard/account/tokens) in Vercel and click <strong>Redeploy</strong> — the build sets up the
-              database by itself. (Alternatively set <code>SUPABASE_DB_URL</code> to the <strong>Session pooler</strong> connection string, not the “Direct
-              connection”.) The build log’s “Orange Kitchen setup” report shows the result.
-            </p>
-          </div>
-        )}
-        <div className="mt-8 space-y-6">
-          {GROUPS.map((g) => (
-            <section key={g.title} className="card p-5">
-              <h2 className="font-sans text-lg font-bold">{g.title}</h2>
-              <ul className="mt-3 divide-y divide-charcoal/5">
-                {g.keys.map((k) => {
-                  const set = Boolean(process.env[k.name]);
-                  return (
-                    <li key={k.name} className="flex items-start gap-3 py-2.5 text-sm">
-                      <span className={set ? "text-leaf" : g.required ? "text-chilli" : "text-charcoal-400"} aria-label={set ? "set" : "missing"}>{set ? "✓" : "○"}</span>
-                      <span>
-                        <code className="font-semibold">{k.name}</code>
-                        <span className="block text-charcoal-500">{k.help}</span>
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ))}
+    <main className="min-h-dvh bg-cream px-4 py-10 sm:py-14">
+      <div className="mx-auto max-w-2xl space-y-5">
+        <div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/logo-256.png" alt="Orange Kitchen" className="h-20 w-20" />
+          <h1 className="mt-3 text-4xl">Set up your website</h1>
+          <p className="mt-2 text-charcoal-700">Two steps, about 5 minutes. Everything else is done from your admin dashboard afterwards.</p>
         </div>
-        <p className="mt-8 text-sm text-charcoal-500">Full guide: docs/SETUP.md in the repository.</p>
+
+        <Step n={1} title="Connect Supabase (your database)" done={supabaseOk}>
+          {!supabaseOk && (
+            <ol className="list-decimal space-y-2 pl-5">
+              <li>Create a free account at <a className="link" href="https://supabase.com" target="_blank" rel="noopener noreferrer">supabase.com</a> and click <strong>New project</strong> (region: <strong>Mumbai</strong>). Save the database password somewhere safe.</li>
+              <li>In <strong>Vercel</strong> → your project → <strong>Integrations</strong> (or Storage) → <strong>Supabase</strong> → <strong>Connect</strong>, and pick that project. This adds the keys for you.</li>
+              <li>Vercel → <strong>Deployments</strong> → ⋯ → <strong>Redeploy</strong>, then open this page again.</li>
+            </ol>
+          )}
+          {!supabaseOk && (
+            <details className="mt-3">
+              <summary className="cursor-pointer text-charcoal-500">Prefer to add the keys by hand?</summary>
+              <p className="mt-2">Supabase → Project Settings → API, then add these in Vercel → Settings → Environment Variables and redeploy:</p>
+              <ul className="mt-2 space-y-1 font-mono text-xs">
+                {["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"].map((k) => (
+                  <li key={k}>{process.env[k] ? "✓" : "○"} {k}</li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </Step>
+
+        <Step n={2} title="Create your owner account" done={false}>
+          {!supabaseOk ? (
+            <p className="text-charcoal-500">Finish step 1 first.</p>
+          ) : (
+            <>
+              <p>
+                Get a Supabase access token: open{" "}
+                <a className="link" href="https://supabase.com/dashboard/account/tokens" target="_blank" rel="noopener noreferrer">supabase.com/dashboard/account/tokens</a>{" "}
+                → <strong>Generate new token</strong> → name it “Orange Kitchen” → copy it. This proves you own the project; we use it to create your database and set up login emails.
+              </p>
+              {!schema.ready && <p className="mt-2 rounded-xl bg-brand-50 px-3 py-2 text-brand-800">Your database will be created when you click the button (takes ~30 seconds).</p>}
+              <ActionForm action={completeSetup} className="mt-4 grid gap-3">
+                <label><span className="label">Supabase access token</span><input name="token" type="password" required autoComplete="off" className="input" placeholder="sbp_..." /></label>
+                <label><span className="label">Your name</span><input name="name" required className="input" autoComplete="name" /></label>
+                <label><span className="label">Owner email (your login)</span><input name="email" type="email" required className="input" autoComplete="email" /></label>
+                <label><span className="label">Password (at least 10 characters)</span><input name="password" type="password" required minLength={10} className="input" autoComplete="new-password" /></label>
+                <SubmitButton className="btn-primary mt-2 py-3 text-base" pendingLabel="Setting up your website…">Set up my website</SubmitButton>
+              </ActionForm>
+            </>
+          )}
+        </Step>
+
+        <section className="card p-6 text-sm text-charcoal-700">
+          <p className="font-bold">After this, in your admin dashboard:</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li><strong>Settings</strong> → your UPI ID for GPay payments, hours, contact details</li>
+            <li><strong>Integrations</strong> → connect Gmail for emails (paste an app password)</li>
+            <li><strong>Dishes</strong> → import your menu with prices (photos are added automatically)</li>
+            <li><strong>Dashboard</strong> → click <strong>Go online</strong></li>
+          </ul>
+        </section>
       </div>
     </main>
   );

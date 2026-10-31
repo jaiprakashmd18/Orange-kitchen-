@@ -31,7 +31,7 @@ export default async function CheckoutPage() {
           takeaway_enabled: settings.takeaway_enabled,
         }}
         emailVerified={Boolean(user.email_confirmed_at || user.phone_confirmed_at)}
-        paymentMethods={availablePaymentMethods(settings)}
+        paymentMethods={await availablePaymentMethods(settings)}
       />
     </div>
   );

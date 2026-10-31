@@ -1,6 +1,26 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { publicEnv, serverEnv } from "@/lib/env";
+import { publicEnv } from "@/lib/env";
+import { getConfig } from "@/lib/config";
+
+/** Email / WhatsApp settings from env or Admin → Integrations. */
+async function channelConfig() {
+  const c = await getConfig();
+  return {
+    resendApiKey: c.resend_api_key,
+    emailFrom: c.email_from,
+    smtpHost: c.smtp_host,
+    smtpPort: Number(c.smtp_port || 465),
+    smtpUser: c.smtp_user,
+    smtpPass: c.smtp_pass,
+    smtpSenderEmail: c.smtp_sender_email || c.smtp_user,
+    smtpSenderName: c.smtp_sender_name || "Orange Kitchen",
+    whatsappToken: c.whatsapp_access_token,
+    whatsappPhoneNumberId: c.whatsapp_phone_number_id,
+    whatsappTemplateName: c.whatsapp_order_template,
+    whatsappTemplateLang: c.whatsapp_template_lang || "en",
+  };
+}
 import { formatINR } from "@/lib/format";
 import { STATUS_LABEL } from "@/lib/order-status";
 import type { Order, OrderStatus } from "@/lib/types";
@@ -48,6 +68,7 @@ function escapeHtml(s: string) {
 }
 
 async function sendEmail(to: string, subject: string, text: string, order: Order) {
+  const serverEnv = await channelConfig();
   const url = `${publicEnv.siteUrl}/orders/${order.id}`;
   const html = `<!doctype html><html><body style="margin:0;background:#FFFAEE;font-family:Arial,sans-serif;color:#2C1408">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px">
@@ -96,6 +117,7 @@ async function sendEmail(to: string, subject: string, text: string, order: Order
  * {{2}} status label, {{3}} tracking URL.
  */
 async function sendWhatsApp(phone: string, order: Order, statusLabel: string) {
+  const serverEnv = await channelConfig();
   const digits = phone.replace(/\D/g, "");
   const to = digits.length === 10 ? `91${digits}` : digits;
   const res = await fetch(`https://graph.facebook.com/v21.0/${serverEnv.whatsappPhoneNumberId}/messages`, {
@@ -149,6 +171,7 @@ export async function dispatchOrderNotifications(orderId: string, status: OrderS
     const base = { user_id: o.customer_id, order_id: o.id, event_type: `order.${status}`, title, body };
 
     // Email
+    const serverEnv = await channelConfig();
     const emailReady = Boolean((serverEnv.resendApiKey && serverEnv.emailFrom) || (serverEnv.smtpHost && serverEnv.smtpUser && serverEnv.smtpPass));
     if (!emailReady) {
       await record({ ...base, channel: "email", status: "skipped", error: "Email provider not configured" });

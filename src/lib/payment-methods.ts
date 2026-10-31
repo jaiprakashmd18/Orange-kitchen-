@@ -1,11 +1,11 @@
-import { integrationStatus } from "@/lib/env";
 import type { PaymentMethod, RestaurantSettings } from "@/lib/types";
 
-/** Which online payment methods customers can use right now. */
-export function availablePaymentMethods(settings: Pick<RestaurantSettings, "upi_enabled" | "upi_id">): PaymentMethod[] {
+/** Which online payment methods customers can use right now (server only). */
+export async function availablePaymentMethods(settings: Pick<RestaurantSettings, "upi_enabled" | "upi_id">): Promise<PaymentMethod[]> {
+  const { getIntegrationStatus } = await import("@/lib/config");
   const methods: PaymentMethod[] = [];
   if (settings.upi_enabled && settings.upi_id) methods.push("upi");
-  if (integrationStatus().razorpay) methods.push("razorpay");
+  if ((await getIntegrationStatus()).razorpay) methods.push("razorpay");
   return methods;
 }
 

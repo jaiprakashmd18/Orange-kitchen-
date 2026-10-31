@@ -1,4 +1,36 @@
-# Setup: add your keys, deploy
+# Easy setup (about 10 minutes)
+
+You don't need to edit any code or copy environment variables.
+
+## 1. Create the database (Supabase)
+Go to [supabase.com](https://supabase.com) → sign up → **New project** (region **Mumbai**). Save the database password somewhere safe.
+
+## 2. Put the website online (Vercel)
+1. [vercel.com/new](https://vercel.com/new) → import this GitHub repository → **Deploy**.
+2. Open the project → **Integrations** (or **Storage**) → **Supabase** → **Connect** → choose the project from step 1. This adds the database keys automatically.
+3. **Deployments** → ⋯ → **Redeploy**.
+
+## 3. Open your website → it shows **"Set up your website"**
+1. Create a token at [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens) and paste it.
+2. Choose your owner email and password → **Set up my website**.
+
+The site creates its own database and your admin login. Log in at `/admin`.
+
+## 4. In the admin dashboard
+| Where | What |
+|---|---|
+| **Settings** | UPI ID (GPay payments), contact details, tax, timings text |
+| **Integrations** | Gmail (paste an app password; there's a test button), Razorpay keys (optional), WhatsApp (optional) |
+| **Hours**, **Delivery areas**, **Pickup slots** | Opening times, pincodes & fees, then "Generate from opening hours" |
+| **Dishes → Import CSV** | Your menu with prices. Photos are added automatically |
+| **Dashboard** | **Go online** |
+
+---
+
+# Advanced / manual setup
+Everything below is optional. It covers configuring through environment variables instead of the screens above (environment variables always win).
+
+## Environment-variable setup
 
 Everything is automated. You create three accounts, copy keys into Vercel, and deploy.
 On every build, `scripts/setup.mjs` runs before `next build`. It:

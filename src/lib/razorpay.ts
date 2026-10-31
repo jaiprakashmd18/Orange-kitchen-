@@ -1,12 +1,14 @@
 import "server-only";
 import crypto from "node:crypto";
-import { serverEnv } from "@/lib/env";
+import { getConfig } from "@/lib/config";
 
 // Thin Razorpay REST client. Secrets stay on the server.
 const API = "https://api.razorpay.com/v1";
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const auth = Buffer.from(`${serverEnv.razorpayKeyId}:${serverEnv.razorpayKeySecret}`).toString("base64");
+  const c = await getConfig();
+  if (!c.razorpay_key_id || !c.razorpay_key_secret) throw new Error("Razorpay keys are not configured");
+  const auth = Buffer.from(`${c.razorpay_key_id}:${c.razorpay_key_secret}`).toString("base64");
   const res = await fetch(`${API}${path}`, {
     ...init,
     headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json", ...(init.headers ?? {}) },
@@ -87,14 +89,18 @@ function safeEqualHex(a: string, b: string) {
 }
 
 /** Checkout handler signature: HMAC_SHA256(order_id|payment_id, key_secret) */
-export function verifyCheckoutSignature(orderId: string, paymentId: string, signature: string) {
-  const expected = crypto.createHmac("sha256", serverEnv.razorpayKeySecret).update(`${orderId}|${paymentId}`).digest("hex");
+export async function verifyCheckoutSignature(orderId: string, paymentId: string, signature: string) {
+  const { razorpay_key_secret } = await getConfig();
+  if (!razorpay_key_secret) return false;
+  const expected = crypto.createHmac("sha256", razorpay_key_secret).update(`${orderId}|${paymentId}`).digest("hex");
   return safeEqualHex(expected, signature);
 }
 
 /** Webhook signature: HMAC_SHA256(raw_body, webhook_secret) */
-export function verifyWebhookSignature(rawBody: string, signature: string | null) {
+export async function verifyWebhookSignature(rawBody: string, signature: string | null) {
+  const { razorpay_webhook_secret } = await getConfig();
+  if (!razorpay_webhook_secret) throw new Error("Razorpay webhook secret is not configured");
   if (!signature || !/^[a-f0-9]{64}$/.test(signature)) return false;
-  const expected = crypto.createHmac("sha256", serverEnv.razorpayWebhookSecret).update(rawBody).digest("hex");
+  const expected = crypto.createHmac("sha256", razorpay_webhook_secret).update(rawBody).digest("hex");
   return safeEqualHex(expected, signature);
 }

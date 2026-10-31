@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   let valid = false;
   try {
-    valid = verifyWebhookSignature(raw, signature);
+    valid = await verifyWebhookSignature(raw, signature);
   } catch (e) {
     console.error("[webhook] secret missing", e);
     return NextResponse.json({ error: "not configured" }, { status: 503 });

@@ -8,8 +8,8 @@ import { safeNext } from "@/lib/safe-redirect";
 
 export const metadata: Metadata = { title: "Log in", robots: { index: false } };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
-  const { next, error } = await searchParams;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; setup?: string }> }) {
+  const { next, error, setup } = await searchParams;
   const user = await getSessionUser();
   if (user && error !== "forbidden") redirect(safeNext(next));
   return (
@@ -18,6 +18,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       subtitle="Log in to place orders, track deliveries and reorder your favourites."
       footer={<>New to Orange Kitchen? <Link href={`/auth/signup${next ? `?next=${encodeURIComponent(next)}` : ""}`} className="link">Create an account</Link></>}
     >
+      {setup === "done" && <p className="mb-4 rounded-xl bg-leaf-50 px-4 py-3 text-sm text-leaf" role="status">🎉 Your website is set up! Log in with the owner email and password you just chose.</p>}
       {error && <p className="field-error mb-4" role="alert">{error === "link"
             ? "That link is invalid or has expired. Please try again."
             : error === "forbidden"

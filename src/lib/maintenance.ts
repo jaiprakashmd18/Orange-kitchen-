@@ -1,6 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { integrationStatus } from "@/lib/env";
+import { getIntegrationStatus } from "@/lib/config";
 import { fetchOrderPayments, fetchRefund } from "@/lib/razorpay";
 import { settlePayment } from "@/lib/payments";
 
@@ -38,7 +38,7 @@ export async function reconcileRazorpayOrder(providerOrderId: string) {
 
 /** Customer-facing: quickly re-check an unpaid order (throttled per order). */
 export async function reconcileOrder(orderId: string) {
-  if (!integrationStatus().razorpay) return;
+  if (!(await getIntegrationStatus()).razorpay) return;
   if (!(await allowed(`reconcile-order:${orderId}`, 10))) return;
   const { data: pays } = await createAdminClient()
     .from("payments")
@@ -60,7 +60,7 @@ export async function runMaintenance(opts: { force?: boolean } = {}) {
   const db = createAdminClient();
   const result = { confirmed: 0, failed: 0, refunds: 0, expired: 0 };
 
-  if (integrationStatus().razorpay) {
+  if ((await getIntegrationStatus()).razorpay) {
     // Payments still open for orders created in the last 48h (oldest check first).
     const since = new Date(Date.now() - 48 * 3600_000).toISOString();
     const { data: open } = await db

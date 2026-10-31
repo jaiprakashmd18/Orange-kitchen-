@@ -25,6 +25,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
   ] },
   { title: "Settings", items: [
     { href: "/admin/settings", label: "Restaurant settings", icon: "settings", adminOnly: true },
+    { href: "/admin/integrations", label: "Integrations", icon: "external", adminOnly: true },
     { href: "/admin/hours", label: "Hours & holidays", icon: "clock", adminOnly: true },
     { href: "/admin/delivery-areas", label: "Delivery areas", icon: "pin", adminOnly: true },
     { href: "/admin/pickup-slots", label: "Pickup slots", icon: "bag", adminOnly: true },

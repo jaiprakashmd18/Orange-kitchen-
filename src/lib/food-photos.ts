@@ -2,6 +2,7 @@ import "server-only";
 import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { publicEnv } from "@/lib/env";
+import { getConfig } from "@/lib/config";
 import { commonsSearchUrl, parseCommons, parsePexels, photoQueries, type PhotoCandidate } from "@/lib/photo-sources";
 
 // Automatic dish photos. Uses Pexels when PEXELS_API_KEY is set (best food
@@ -22,7 +23,7 @@ async function getJson<T>(url: string, headers: Record<string, string> = {}): Pr
   }
 }
 
-export const photoProvider = () => (process.env.PEXELS_API_KEY ? "Pexels" : "Wikimedia Commons");
+export const photoProvider = async () => ((await getConfig()).pexels_api_key ? "Pexels" : "Wikimedia Commons");
 
 /** Up to `limit` candidate photos for a dish. */
 export async function findPhotos(dish: string, category: string | null, limit = 6): Promise<PhotoCandidate[]> {
@@ -35,12 +36,13 @@ export async function findPhotos(dish: string, category: string | null, limit = 
       out.push(x);
     }
   };
+  const pexelsKey = (await getConfig()).pexels_api_key;
   for (const q of photoQueries(dish, category)) {
     if (out.length >= limit) break;
-    if (process.env.PEXELS_API_KEY) {
+    if (pexelsKey) {
       const json = await getJson<Parameters<typeof parsePexels>[0]>(
         `https://api.pexels.com/v1/search?${new URLSearchParams({ query: q, per_page: "8", orientation: "landscape" })}`,
-        { Authorization: process.env.PEXELS_API_KEY },
+        { Authorization: pexelsKey },
       );
       if (json) add(parsePexels(json));
     }

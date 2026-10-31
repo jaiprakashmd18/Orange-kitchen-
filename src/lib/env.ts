@@ -9,7 +9,8 @@ function required(name: string): string {
 
 export const publicEnv = {
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+  // Classic "anon" key, or the newer "publishable" key name used by the Vercel ↔ Supabase integration.
+  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "",
   // Explicit URL wins; on Vercel the production domain is detected automatically.
   siteUrl: (
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -19,11 +20,18 @@ export const publicEnv = {
   razorpayKeyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "",
 };
 
+/** Server-only: classic service_role key, or the newer "secret" key name. */
+export function serviceRoleKey() {
+  return process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "";
+}
+
 export const isSupabaseConfigured = Boolean(publicEnv.supabaseUrl && publicEnv.supabaseAnonKey);
 
 export const serverEnv = {
   get supabaseServiceRoleKey() {
-    return required("SUPABASE_SERVICE_ROLE_KEY");
+    const key = serviceRoleKey();
+    if (!key) throw new Error("Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY");
+    return key;
   },
   get razorpayKeyId() {
     return required("NEXT_PUBLIC_RAZORPAY_KEY_ID");
@@ -52,7 +60,7 @@ export const serverEnv = {
 };
 
 export const integrationStatus = () => ({
-  supabase: isSupabaseConfigured && Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+  supabase: isSupabaseConfigured && Boolean(serviceRoleKey()),
   razorpay: Boolean(process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET),
   razorpayWebhook: Boolean(process.env.RAZORPAY_WEBHOOK_SECRET),
   razorpayMode: (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "").startsWith("rzp_live_") ? "live" : "test",

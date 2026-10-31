@@ -14,6 +14,11 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The /setup wizard can apply database migrations at runtime.
+  outputFileTracingIncludes: {
+    "/setup": ["./supabase/migrations/*.sql"],
+    "/admin/integrations": ["./supabase/migrations/*.sql"],
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: supabaseHost

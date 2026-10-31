@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const owner = (payment?.orders as unknown as { customer_id: string } | null)?.customer_id;
     if (!payment || owner !== user.id) throw new HttpError(404, "Payment not found.");
 
-    if (!verifyCheckoutSignature(body.razorpay_order_id, body.razorpay_payment_id, body.razorpay_signature)) {
+    if (!(await verifyCheckoutSignature(body.razorpay_order_id, body.razorpay_payment_id, body.razorpay_signature))) {
       throw new HttpError(400, "Payment signature could not be verified.", "BAD_SIGNATURE");
     }
     const result = await settlePayment(body.razorpay_order_id, body.razorpay_payment_id, "signature");

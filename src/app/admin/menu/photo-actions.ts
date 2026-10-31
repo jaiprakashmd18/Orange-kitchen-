@@ -14,7 +14,7 @@ const STAFF = ["admin", "staff"] as ("admin" | "staff")[];
 /** Bulk: add a photo to every dish without one (a batch per click). */
 export const autoAddPhotos = adminAction({ roles: STAFF, audit: "menu.auto_photos", revalidate: ["/admin/menu", "/menu", "/"] }, async () => {
   const r = await autoPhotosForMissing(8);
-  const parts = [`Added ${r.added} photo${r.added === 1 ? "" : "s"} from ${photoProvider()}.`];
+  const parts = [`Added ${r.added} photo${r.added === 1 ? "" : "s"} from ${await photoProvider()}.`];
   if (r.notFound.length) parts.push(`No good photo found for: ${r.notFound.join(", ")} — upload your own.`);
   if (r.failed.length) parts.push(`Couldn't download: ${r.failed.join(", ")}.`);
   if (r.remaining > 0) parts.push(`${r.remaining} dish(es) still without a photo — click again to continue.`);

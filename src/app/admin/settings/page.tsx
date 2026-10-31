@@ -3,7 +3,7 @@ import { ActionForm, SubmitButton } from "@/components/admin/ActionForm";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { requireRole } from "@/lib/auth";
 import { getSettings } from "@/lib/data";
-import { integrationStatus } from "@/lib/env";
+import { getIntegrationStatus } from "@/lib/config";
 import { saveSettings } from "./actions";
 
 export const metadata = { title: "Restaurant settings" };
@@ -33,7 +33,7 @@ function Check({ name, label, defaultChecked }: { name: string; label: string; d
 export default async function SettingsPage() {
   await requireRole(["admin"], "/admin/settings");
   const s = await getSettings();
-  const integ = integrationStatus();
+  const integ = await getIntegrationStatus();
   return (
     <div>
       <PageHeader title="Restaurant settings" description="Everything customers see about Orange Kitchen. Changes go live immediately." />

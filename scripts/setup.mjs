@@ -28,6 +28,10 @@ for (const f of [".env.local", ".env"]) if (existsSync(path.join(root, f))) dote
 const BUILD = process.argv.includes("--build");
 const STRICT = process.env.SETUP_STRICT === "1";
 const env = process.env;
+// Accept the newer Supabase key names set by the Vercel integration.
+// (process.env coerces undefined to the string "undefined", so only assign real values.)
+if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY && env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) env.NEXT_PUBLIC_SUPABASE_ANON_KEY = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+if (!env.SUPABASE_SERVICE_ROLE_KEY && env.SUPABASE_SECRET_KEY) env.SUPABASE_SERVICE_ROLE_KEY = env.SUPABASE_SECRET_KEY;
 const ok = (m) => console.log(`  ✓ ${m}`);
 const warn = (m) => console.log(`  ! ${m}`);
 const fail = (m) => console.log(`  ✗ ${m}`);
