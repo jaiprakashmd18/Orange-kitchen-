@@ -156,13 +156,13 @@ async function configureAuth() {
   const site = siteUrl();
   const allow = [...new Set([`${site}/**`, "http://localhost:3000/**", env.VERCEL_URL ? `https://${env.VERCEL_URL}/**` : null].filter(Boolean))].join(",");
   const body = { site_url: site, uri_allow_list: allow, mailer_autoconfirm: false, external_email_enabled: true };
-  if (env.SMTP_HOST) {
+  if (env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS) {
     Object.assign(body, {
       smtp_host: env.SMTP_HOST,
       smtp_port: String(env.SMTP_PORT || "587"),
       smtp_user: env.SMTP_USER,
       smtp_pass: env.SMTP_PASS,
-      smtp_admin_email: env.SMTP_SENDER_EMAIL,
+      smtp_admin_email: env.SMTP_SENDER_EMAIL || env.SMTP_USER,
       smtp_sender_name: env.SMTP_SENDER_NAME || "Orange Kitchen",
     });
   }
@@ -194,7 +194,8 @@ async function checkRazorpay() {
 
 function summary() {
   console.log("\n▸ Optional integrations");
-  (env.RESEND_API_KEY && env.EMAIL_FROM ? ok : warn)(`email notifications ${env.RESEND_API_KEY && env.EMAIL_FROM ? "on" : "off (set RESEND_API_KEY + EMAIL_FROM)"}`);
+  const mail = env.RESEND_API_KEY && env.EMAIL_FROM ? "Resend" : env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS ? `SMTP (${env.SMTP_HOST})` : null;
+  (mail ? ok : warn)(`order email notifications ${mail ? `on via ${mail}` : "off (set SMTP_* e.g. Gmail, or RESEND_API_KEY + EMAIL_FROM)"}`);
   const wa = env.WHATSAPP_ACCESS_TOKEN && env.WHATSAPP_PHONE_NUMBER_ID && env.WHATSAPP_ORDER_TEMPLATE;
   (wa ? ok : warn)(`WhatsApp notifications ${wa ? "on" : "off (set WHATSAPP_* variables)"}`);
 }

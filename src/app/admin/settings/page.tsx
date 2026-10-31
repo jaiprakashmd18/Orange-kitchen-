@@ -145,7 +145,7 @@ export default async function SettingsPage() {
             <li>{s.upi_enabled && s.upi_id ? "✓" : "✗"} Direct UPI {s.upi_enabled && s.upi_id ? `— ${s.upi_id}` : "(set above)"}</li>
             <li>{integ.razorpay ? "✓" : "✗"} Razorpay (cards / netbanking, optional) {integ.razorpay && <>— <strong>{integ.razorpayMode.toUpperCase()} mode</strong></>}</li>
             <li>{integ.razorpayWebhook ? "✓" : "✗"} Razorpay webhook secret</li>
-            <li>{integ.email ? "✓" : "✗"} Email notifications (Resend)</li>
+            <li>{integ.email ? "✓" : "✗"} Order email notifications {integ.smtp ? "(SMTP / Gmail)" : integ.email ? "(Resend)" : "(set SMTP_* or Resend)"}</li>
             <li>{integ.whatsapp ? "✓" : "✗"} WhatsApp Cloud API</li>
             <li>{integ.cron ? "✓" : "✗"} Scheduled jobs (CRON_SECRET)</li>
           </ul>

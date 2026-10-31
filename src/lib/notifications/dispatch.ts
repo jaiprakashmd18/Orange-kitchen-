@@ -58,10 +58,32 @@ async function sendEmail(to: string, subject: string, text: string, order: Order
   <tr><td style="padding-top:16px;font-size:14px;color:#555">Order ${escapeHtml(order.order_number)} · Total ${escapeHtml(formatINR(order.total_amount))}</td></tr>
   <tr><td style="padding-top:24px"><a href="${url}" style="background:#CC4A0A;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:bold">Track your order</a></td></tr>
   </table></td></tr></table></body></html>`;
+  const fullSubject = `${subject} · ${order.order_number}`;
+  const plain = `${text}\n\nTrack: ${url}`;
+
+  if (!serverEnv.resendApiKey && serverEnv.smtpHost) {
+    // SMTP (e.g. Gmail with an App Password) — same account as login emails.
+    const nodemailer = (await import("nodemailer")).default;
+    const transport = nodemailer.createTransport({
+      host: serverEnv.smtpHost,
+      port: serverEnv.smtpPort,
+      secure: serverEnv.smtpPort === 465,
+      auth: { user: serverEnv.smtpUser, pass: serverEnv.smtpPass },
+    });
+    const info = await transport.sendMail({
+      from: { name: serverEnv.smtpSenderName, address: serverEnv.smtpSenderEmail },
+      to,
+      subject: fullSubject,
+      text: plain,
+      html,
+    });
+    return info.messageId ?? null;
+  }
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${serverEnv.resendApiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: serverEnv.emailFrom, to: [to], subject: `${subject} · ${order.order_number}`, text: `${text}\n\nTrack: ${url}`, html }),
+    body: JSON.stringify({ from: serverEnv.emailFrom, to: [to], subject: fullSubject, text: plain, html }),
   });
   const body = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
   if (!res.ok) throw new Error(body.message ?? `Resend error ${res.status}`);
@@ -127,7 +149,8 @@ export async function dispatchOrderNotifications(orderId: string, status: OrderS
     const base = { user_id: o.customer_id, order_id: o.id, event_type: `order.${status}`, title, body };
 
     // Email
-    if (!serverEnv.resendApiKey || !serverEnv.emailFrom) {
+    const emailReady = Boolean((serverEnv.resendApiKey && serverEnv.emailFrom) || (serverEnv.smtpHost && serverEnv.smtpUser && serverEnv.smtpPass));
+    if (!emailReady) {
       await record({ ...base, channel: "email", status: "skipped", error: "Email provider not configured" });
     } else if (!o.customer_email) {
       await record({ ...base, channel: "email", status: "skipped", error: "No email on order" });

@@ -39,6 +39,12 @@ export const serverEnv = {
   },
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   emailFrom: process.env.EMAIL_FROM ?? "",
+  smtpHost: process.env.SMTP_HOST ?? "",
+  smtpPort: Number(process.env.SMTP_PORT || 587),
+  smtpUser: process.env.SMTP_USER ?? "",
+  smtpPass: process.env.SMTP_PASS ?? "",
+  smtpSenderEmail: process.env.SMTP_SENDER_EMAIL || process.env.SMTP_USER || "",
+  smtpSenderName: process.env.SMTP_SENDER_NAME || "Orange Kitchen",
   whatsappToken: process.env.WHATSAPP_ACCESS_TOKEN ?? "",
   whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID ?? "",
   whatsappTemplateName: process.env.WHATSAPP_ORDER_TEMPLATE ?? "",
@@ -50,7 +56,9 @@ export const integrationStatus = () => ({
   razorpay: Boolean(process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET),
   razorpayWebhook: Boolean(process.env.RAZORPAY_WEBHOOK_SECRET),
   razorpayMode: (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "").startsWith("rzp_live_") ? "live" : "test",
-  email: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
+  // Order emails: Resend, or the same SMTP account (e.g. Gmail) used for login emails.
+  email: Boolean((process.env.RESEND_API_KEY && process.env.EMAIL_FROM) || (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)),
+  smtp: Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
   whatsapp: Boolean(
     process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ORDER_TEMPLATE,
   ),

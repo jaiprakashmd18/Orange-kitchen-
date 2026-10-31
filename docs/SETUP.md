@@ -69,6 +69,18 @@ The **Dashboard → Launch checklist** links to each item:
 Then place a test order using Razorpay test UPI `success@razorpay`. When everything passes ([TESTING.md](TESTING.md)),
 swap in the `rzp_live_` keys and redeploy ([LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md)).
 
+## Emails from your Gmail (recommended before launch)
+Supabase's built-in email sender is limited to a few emails per hour. That's fine for testing, but too few for real customers signing up.
+Using Gmail fixes this, and the same account also sends order update emails:
+1. Turn on **2-Step Verification** for the Gmail account (myaccount.google.com → Security).
+2. Open **myaccount.google.com/apppasswords**, create an app password named "Orange Kitchen", and copy the 16 letters (without spaces).
+3. In Vercel, add:
+   `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_USER=you@gmail.com`, `SMTP_PASS=<app password>`,
+   `SMTP_SENDER_EMAIL=you@gmail.com`, `SMTP_SENDER_NAME=Orange Kitchen`. `SUPABASE_ACCESS_TOKEN` must also be set.
+4. **Redeploy.** The build log shows `✓ custom SMTP smtp.gmail.com` and `order email notifications on via SMTP`.
+
+Gmail allows about 500 emails a day. If you outgrow that, switch to a domain email or Resend.
+
 ## Optional integrations (just add keys and redeploy)
 - **Email order updates**: Resend account + verified domain → `RESEND_API_KEY`, `EMAIL_FROM`.
 - **Login/verification emails from your own domain**: `SMTP_*` variables (applied automatically). Strongly recommended for launch, because Supabase's built-in sender only allows a few emails per hour.
