@@ -31,12 +31,19 @@ export async function requireUser(next = "/account") {
 /** For pages/layouts: redirects when the user lacks every listed role. */
 export async function requireRole(roles: AppRole[], next = "/") {
   const user = await requireUser(next);
-  const mine = await getRoles();
+  let mine = await getRoles();
   if (!roles.some((r) => mine.includes(r))) {
     // A missing schema looks like "no roles" — send the owner to the setup guide instead.
     const { schemaStatus } = await import("@/lib/setup-status");
     if (!(await schemaStatus()).ready) redirect("/setup");
-    redirect("/?error=forbidden");
+    // The owner (ADMIN_EMAIL, verified login) always gets admin access.
+    const { adminEmail, grantAdmin } = await import("@/lib/admin-bootstrap");
+    if (roles.includes("admin") && user.email && user.email.toLowerCase() === adminEmail() && user.email_confirmed_at) {
+      await grantAdmin(user.id);
+      mine = [...mine, "admin"];
+    } else {
+      redirect(`/auth/login?error=forbidden&next=${encodeURIComponent(next)}`);
+    }
   }
   return { user, roles: mine };
 }

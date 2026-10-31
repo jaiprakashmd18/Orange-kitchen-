@@ -16,8 +16,8 @@ const GROUPS: { title: string; required: boolean; keys: { name: string; help: st
       { name: "NEXT_PUBLIC_SUPABASE_URL", help: "Supabase → Project Settings → API → Project URL" },
       { name: "NEXT_PUBLIC_SUPABASE_ANON_KEY", help: "Supabase → Project Settings → API → anon public key" },
       { name: "SUPABASE_SERVICE_ROLE_KEY", help: "Supabase → Project Settings → API → service_role key (secret)" },
-      { name: "SUPABASE_DB_URL", help: "Supabase → Connect → Session pooler connection string (with your DB password)" },
-      { name: "SUPABASE_ACCESS_TOKEN", help: "supabase.com/dashboard/account/tokens — lets setup configure login emails & redirects" },
+      { name: "SUPABASE_ACCESS_TOKEN", help: "supabase.com/dashboard/account/tokens — sets up the database, login emails & redirects automatically" },
+      { name: "SUPABASE_DB_URL", help: "Optional if the access token is set — Supabase → Connect → Session pooler connection string" },
     ],
   },
   {
@@ -68,8 +68,9 @@ export default async function SetupPage() {
             <p className="font-bold">Keys found, but the database is not set up yet.</p>
             <p className="mt-1 text-charcoal-700">Database says: <code>{schema.error}</code></p>
             <p className="mt-2 text-charcoal-700">
-              Set <code>SUPABASE_DB_URL</code> to the <strong>Session pooler</strong> connection string (Supabase → Connect → Session pooler, with your database
-              password filled in — not the “Direct connection”, which Vercel can’t reach), then <strong>Redeploy</strong>. The build log shows the setup report.
+              Add <code>SUPABASE_ACCESS_TOKEN</code> (supabase.com/dashboard/account/tokens) in Vercel and click <strong>Redeploy</strong> — the build sets up the
+              database by itself. (Alternatively set <code>SUPABASE_DB_URL</code> to the <strong>Session pooler</strong> connection string, not the “Direct
+              connection”.) The build log’s “Orange Kitchen setup” report shows the result.
             </p>
           </div>
         )}

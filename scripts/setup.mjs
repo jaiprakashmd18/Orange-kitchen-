@@ -63,23 +63,56 @@ function siteUrl() {
   return "http://localhost:3000";
 }
 
-async function migrate(sql) {
-  console.log("\n▸ Database migrations");
-  await sql.unsafe(`
+// ── Database access: direct Postgres connection, or the Supabase Management
+// API (SQL over HTTPS with SUPABASE_ACCESS_TOKEN) when no DB URL works.
+const lit = (v) => `'${String(v).replace(/'/g, "''")}'`;
+const projectRef = () => env.NEXT_PUBLIC_SUPABASE_URL?.match(/^https:\/\/([a-z0-9]+)\.supabase\.co/)?.[1];
+
+function pgDb(sql) {
+  return {
+    kind: "postgres connection",
+    q: (text) => sql.unsafe(text),
+    tx: (body) => sql.begin((t) => t.unsafe(body)),
+    end: () => sql.end({ timeout: 5 }),
+  };
+}
+
+function apiDb(ref, token) {
+  const q = async (text) => {
+    const res = await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ query: text }),
+    });
+    const body = await res.text();
+    if (!res.ok) throw new Error(`Supabase API ${res.status}: ${body.slice(0, 300)}`);
+    try {
+      const rows = JSON.parse(body);
+      return Array.isArray(rows) ? rows : [];
+    } catch {
+      return [];
+    }
+  };
+  return { kind: "Supabase Management API", q, tx: (b) => q(`begin;\n${b}\ncommit;`), end: async () => {} };
+}
+
+async function migrate(db) {
+  console.log(`\n▸ Database migrations (via ${db.kind})`);
+  await db.q(`
     create schema if not exists ok_internal;
     revoke all on schema ok_internal from public;
     create table if not exists ok_internal.schema_migrations (name text primary key, applied_at timestamptz not null default now());
   `);
   const dir = path.join(root, "supabase/migrations");
   const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
-  const applied = new Set((await sql`select name from ok_internal.schema_migrations`).map((r) => r.name));
+  const applied = new Set((await db.q(`select name from ok_internal.schema_migrations`)).map((r) => r.name));
 
   // Database set up by hand earlier (tables exist, nothing tracked): baseline it.
   if (applied.size === 0) {
-    const [{ exists }] = await sql`select to_regclass('public.orders') is not null as exists`;
-    if (exists) {
+    const [row] = await db.q(`select to_regclass('public.orders') is not null as exists`);
+    if (row?.exists === true || row?.exists === "t") {
       const baseline = files.filter((f) => f <= "20261030000400_seed.sql");
-      for (const f of baseline) await sql`insert into ok_internal.schema_migrations (name) values (${f}) on conflict do nothing`;
+      for (const f of baseline) await db.q(`insert into ok_internal.schema_migrations (name) values (${lit(f)}) on conflict do nothing`);
       baseline.forEach((f) => applied.add(f));
       warn(`existing schema detected — marked ${baseline.length} initial migrations as applied`);
     }
@@ -89,21 +122,18 @@ async function migrate(sql) {
   for (const f of files) {
     if (applied.has(f)) continue;
     const body = readFileSync(path.join(dir, f), "utf8");
-    await sql.begin(async (tx) => {
-      await tx.unsafe(body);
-      await tx`insert into ok_internal.schema_migrations (name) values (${f})`;
-    });
+    await db.tx(`${body}\n;insert into ok_internal.schema_migrations (name) values (${lit(f)});`);
     ok(`applied ${f}`);
     n++;
   }
   if (n === 0) ok("database is up to date");
 }
 
-async function bootstrapAdmin(sql) {
+async function bootstrapAdmin(db) {
   console.log("\n▸ Admin account");
   const email = env.ADMIN_EMAIL?.trim().toLowerCase();
   if (!email) return warn("ADMIN_EMAIL not set — skip (you can grant admin later in Admin → Staff access)");
-  const [existing] = await sql`select id from auth.users where lower(email) = ${email}`;
+  const [existing] = await db.q(`select id from auth.users where lower(email) = ${lit(email)}`);
   let userId = existing?.id;
   if (!userId) {
     if (!env.ADMIN_PASSWORD || env.ADMIN_PASSWORD.length < 10) return warn("ADMIN_PASSWORD (min 10 chars) needed to create the admin login");
@@ -114,7 +144,7 @@ async function bootstrapAdmin(sql) {
     userId = data.user.id;
     ok(`created admin login ${email}`);
   }
-  await sql`insert into public.user_roles (user_id, role) values (${userId}, 'admin') on conflict do nothing`;
+  await db.q(`insert into public.user_roles (user_id, role) values (${lit(userId)}, 'admin') on conflict do nothing`);
   ok(`${email} has admin access → ${siteUrl()}/admin`);
 }
 
@@ -178,21 +208,23 @@ function summary() {
     if (!BUILD) hardError = true;
   }
 
-  // SUPABASE_DB_URL, or the variables the Supabase ↔ Vercel integration sets automatically.
+  // 1) SUPABASE_DB_URL or the Supabase ↔ Vercel integration's POSTGRES_URL*;
+  // 2) otherwise the Supabase Management API with SUPABASE_ACCESS_TOKEN.
   const candidates = [env.SUPABASE_DB_URL, env.POSTGRES_URL_NON_POOLING, env.POSTGRES_URL].filter(Boolean);
   const sql = candidates.length ? await connect(candidates) : null;
-  if (!sql) {
-    (BUILD ? warn : fail)(
-      candidates.length
-        ? "could not connect to the database — check SUPABASE_DB_URL (use the Supabase “Session pooler” connection string)"
-        : "SUPABASE_DB_URL not set — database not migrated. Use the Supabase “Session pooler” connection string.",
-    );
+  let db = sql ? pgDb(sql) : null;
+  if (!db && env.SUPABASE_ACCESS_TOKEN && projectRef()) {
+    db = apiDb(projectRef(), env.SUPABASE_ACCESS_TOKEN);
+    if (candidates.length) warn("falling back to the Supabase Management API for database setup");
+  }
+  if (!db) {
+    (BUILD ? warn : fail)("database not set up — add SUPABASE_ACCESS_TOKEN (simplest) or SUPABASE_DB_URL (Session pooler connection string)");
     if (!BUILD || STRICT) hardError = true;
   } else {
     try {
-      await migrate(sql);
+      await migrate(db);
       try {
-        await bootstrapAdmin(sql);
+        await bootstrapAdmin(db);
       } catch (e) {
         fail(`admin bootstrap: ${e.message}`);
       }
@@ -200,7 +232,7 @@ function summary() {
       fail(`migration failed: ${e.message}`);
       if (!BUILD || STRICT) hardError = true;
     } finally {
-      await sql.end({ timeout: 5 });
+      await db.end();
     }
   }
 

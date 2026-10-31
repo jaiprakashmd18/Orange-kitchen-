@@ -10,8 +10,8 @@ On every build, `scripts/setup.mjs` runs before `next build`. It:
 ## Step 1 — Supabase (≈5 min)
 1. Go to [supabase.com](https://supabase.com) → **New project**. Region: **Mumbai (ap-south-1)**. Save the database password.
 2. **Project Settings → API**: copy the Project URL, the `anon` key and the `service_role` key.
-3. **Connect** (top bar) → **Session pooler** → copy the URI and put your DB password in it. This is `SUPABASE_DB_URL`.
-4. Create an access token at [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens). This is `SUPABASE_ACCESS_TOKEN`.
+3. Create an access token at [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens). This is `SUPABASE_ACCESS_TOKEN`. The build uses it to create the database tables, so no SQL or connection string is needed.
+4. *(Optional alternative)* **Connect** (top bar) → **Session pooler** → copy the URI with your DB password filled in. This is `SUPABASE_DB_URL`.
 
 > Shortcut: in Vercel, add the official **Supabase integration** to the project. It fills in the URL, both keys and
 > `POSTGRES_URL` for you. You then only add `SUPABASE_ACCESS_TOKEN`, the admin and the Razorpay keys.
@@ -32,8 +32,8 @@ On every build, `scripts/setup.mjs` runs before `next build`. It:
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role key |
-| `SUPABASE_DB_URL` | Session pooler URI |
 | `SUPABASE_ACCESS_TOKEN` | access token |
+| `SUPABASE_DB_URL` | *(optional)* Session pooler URI |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | owner login (password ≥ 10 characters) |
 | `NEXT_PUBLIC_RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Razorpay keys |
 | `RAZORPAY_WEBHOOK_SECRET` | *(optional)* webhook secret |
@@ -75,6 +75,12 @@ npm run dev                  # http://localhost:3000
 
 ## Backups
 Supabase Pro includes daily backups; enable Point-in-Time Recovery for production. Admin → Reports can export orders, payments and the menu as CSV at any time.
+
+## Can't log in to /admin?
+1. Use **exactly** the `ADMIN_EMAIL` and `ADMIN_PASSWORD` you set in Vercel. If the account is missing, unconfirmed or lacks admin rights, logging in with these values creates or repairs it automatically.
+2. Changed those variables? **Redeploy** first, because Vercel only applies new variables to new deployments.
+3. Seeing "database is not set up"? Add `SUPABASE_ACCESS_TOKEN` and redeploy.
+4. Being sent to `/setup`? Some Supabase keys are missing. The page lists which ones.
 
 ## Troubleshooting a failed deployment
 - **Open the log**: Vercel → your project → Deployments → the failed one → **Build Logs**. The "Orange Kitchen setup" report is at the top.

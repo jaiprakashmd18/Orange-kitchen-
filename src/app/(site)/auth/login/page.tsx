@@ -10,14 +10,19 @@ export const metadata: Metadata = { title: "Log in", robots: { index: false } };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next, error } = await searchParams;
-  if (await getSessionUser()) redirect(safeNext(next));
+  const user = await getSessionUser();
+  if (user && error !== "forbidden") redirect(safeNext(next));
   return (
     <AuthCard
       title="Welcome back"
       subtitle="Log in to place orders, track deliveries and reorder your favourites."
       footer={<>New to Orange Kitchen? <Link href={`/auth/signup${next ? `?next=${encodeURIComponent(next)}` : ""}`} className="link">Create an account</Link></>}
     >
-      {error && <p className="field-error mb-4" role="alert">{error === "link" ? "That link is invalid or has expired. Please try again." : "Please log in to continue."}</p>}
+      {error && <p className="field-error mb-4" role="alert">{error === "link"
+            ? "That link is invalid or has expired. Please try again."
+            : error === "forbidden"
+              ? `${user?.email ?? "This account"} doesn't have access to that page. Log in with the admin email set in Vercel (ADMIN_EMAIL), or ask an admin to add you in Admin → Staff access.`
+              : "Please log in to continue."}</p>}
       <LoginForm next={next ?? "/account"} />
     </AuthCard>
   );

@@ -29,7 +29,25 @@ export function LoginForm({ next }: { next: string }) {
     e.preventDefault();
     setPending(true);
     setError(null);
-    const { error } = await createClient().auth.signInWithPassword({ email: email.trim(), password });
+    const supabase = createClient();
+    let { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) {
+      // Owner login self-repair: if these are the ADMIN_EMAIL / ADMIN_PASSWORD
+      // configured on the server, the account is created/fixed, then we retry.
+      const res = await fetch("/api/auth/admin-bootstrap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      }).catch(() => null);
+      const body = res ? await res.json().catch(() => ({})) : {};
+      if (res?.ok && body.ok) {
+        ({ error } = await supabase.auth.signInWithPassword({ email: email.trim(), password }));
+      } else if (body.code === "NO_SCHEMA" || body.code === "NO_KEYS") {
+        setPending(false);
+        setError(body.error);
+        return;
+      }
+    }
     setPending(false);
     if (error) {
       setError(error.message.includes("Email not confirmed") ? "Please verify your email first — check your inbox for the link." : "Incorrect email or password.");
