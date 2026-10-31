@@ -32,7 +32,12 @@ export async function requireUser(next = "/account") {
 export async function requireRole(roles: AppRole[], next = "/") {
   const user = await requireUser(next);
   const mine = await getRoles();
-  if (!roles.some((r) => mine.includes(r))) redirect("/?error=forbidden");
+  if (!roles.some((r) => mine.includes(r))) {
+    // A missing schema looks like "no roles" — send the owner to the setup guide instead.
+    const { schemaStatus } = await import("@/lib/setup-status");
+    if (!(await schemaStatus()).ready) redirect("/setup");
+    redirect("/?error=forbidden");
+  }
   return { user, roles: mine };
 }
 

@@ -41,7 +41,7 @@
 pending_payment ─► payment_confirmed ─► accepted ─► preparing ─► ready ─┬─► delivery_assigned ─► picked_up ─► out_for_delivery ─► delivered
    │   ▲               │                   │            │           │   └─► collected (takeaway)
    ▼   │               └─► rejected        └─► cancelled (refund)   └─► cancelled
-payment_failed ─► expired (payment window elapsed; cron every 10 min)
+payment_failed ─► expired (payment window elapsed; upkeep runs on admin/order page views + daily cron)
 ```
 - Customers can cancel only while the order is `payment_confirmed` (before the restaurant accepts it). This triggers an automatic full refund.
 - If staff reject or cancel an order, a full refund is issued automatically. Admin has a retry button if the Razorpay refund fails.

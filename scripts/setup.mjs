@@ -11,8 +11,9 @@
 //      redirect allow-list, email confirmation, custom SMTP.
 //   4. Verifies Razorpay keys and prints what is / isn't configured.
 //
-// In --build mode a missing SUPABASE_DB_URL only warns (the build continues);
-// a failing migration fails the build so a broken schema is never deployed.
+// In --build mode problems are reported in the build log but never fail the
+// deployment (the site's /setup page then explains what to fix). Set
+// SETUP_STRICT=1 to make database problems fail the build instead.
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import path from "node:path";
@@ -25,6 +26,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 for (const f of [".env.local", ".env"]) if (existsSync(path.join(root, f))) dotenv.config({ path: path.join(root, f) });
 
 const BUILD = process.argv.includes("--build");
+const STRICT = process.env.SETUP_STRICT === "1";
 const env = process.env;
 const ok = (m) => console.log(`  ✓ ${m}`);
 const warn = (m) => console.log(`  ! ${m}`);
@@ -185,7 +187,7 @@ function summary() {
         ? "could not connect to the database — check SUPABASE_DB_URL (use the Supabase “Session pooler” connection string)"
         : "SUPABASE_DB_URL not set — database not migrated. Use the Supabase “Session pooler” connection string.",
     );
-    if (!BUILD || candidates.length) hardError = true;
+    if (!BUILD || STRICT) hardError = true;
   } else {
     try {
       await migrate(sql);
@@ -196,7 +198,7 @@ function summary() {
       }
     } catch (e) {
       fail(`migration failed: ${e.message}`);
-      hardError = true;
+      if (!BUILD || STRICT) hardError = true;
     } finally {
       await sql.end({ timeout: 5 });
     }
@@ -207,4 +209,8 @@ function summary() {
   summary();
   console.log(hardError ? "\nSetup finished with errors.\n" : `\nDone. Open ${siteUrl()}/admin to finish restaurant details.\n`);
   process.exit(hardError ? 1 : 0);
-})();
+})().catch((e) => {
+  // Never let an unexpected setup error block a deployment.
+  console.error("setup crashed:", e);
+  process.exit(BUILD && !STRICT ? 0 : 1);
+});

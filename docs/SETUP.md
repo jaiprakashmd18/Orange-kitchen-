@@ -63,7 +63,7 @@ swap in the `rzp_live_` keys and redeploy ([LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIS
 - **WhatsApp order updates**: Meta WhatsApp Cloud API → `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, and `WHATSAPP_ORDER_TEMPLATE` (an approved utility template with `{{1}}` order no., `{{2}}` status, `{{3}}` link).
 - **Mobile OTP login**: Supabase → Authentication → Providers → Phone → choose an SMS provider (Twilio / MessageBird / Vonage).
 - **Delivery partner API**: see [DELIVERY_PROVIDERS.md](DELIVERY_PROVIDERS.md).
-- **`CRON_SECRET`**: protects the 10-minute upkeep job. Without it the job still runs (throttled), and upkeep also runs whenever the admin dashboard is open.
+- **`CRON_SECRET`**: protects the daily upkeep job (`vercel.json` schedules it once a day so it works on the free Hobby plan; on Pro you can change it to every 10 minutes). Upkeep also runs, throttled, whenever the admin dashboard or an unpaid order page is open.
 
 ## Running locally
 ```bash
@@ -75,3 +75,9 @@ npm run dev                  # http://localhost:3000
 
 ## Backups
 Supabase Pro includes daily backups; enable Point-in-Time Recovery for production. Admin → Reports can export orders, payments and the menu as CSV at any time.
+
+## Troubleshooting a failed deployment
+- **Open the log**: Vercel → your project → Deployments → the failed one → **Build Logs**. The "Orange Kitchen setup" report is at the top.
+- **"Hobby accounts are limited to daily cron jobs"**: already handled — `vercel.json` uses a daily schedule.
+- **Two projects deploying** (e.g. `orange-kitchen` and `orange-kitchen-c697`): the repo was imported twice. Keep the one with your environment variables and delete the other (Settings → Advanced → Delete Project).
+- **Database step shows ✗ / site shows "database is not set up"**: use the *Session pooler* connection string (not "Direct connection") with the real password, then redeploy. Set `SETUP_STRICT=1` if you prefer database problems to fail the build.

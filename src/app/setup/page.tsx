@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { isSupabaseConfigured, integrationStatus } from "@/lib/env";
+import { integrationStatus } from "@/lib/env";
+import { schemaStatus } from "@/lib/setup-status";
 
 export const metadata: Metadata = { title: "Setup", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -49,9 +50,10 @@ const GROUPS: { title: string; required: boolean; keys: { name: string; help: st
   },
 ];
 
-export default function SetupPage() {
+export default async function SetupPage() {
   const integ = integrationStatus();
-  if (isSupabaseConfigured && integ.supabase) redirect("/admin");
+  const schema = integ.supabase ? await schemaStatus() : { ready: false, error: null };
+  if (schema.ready) redirect("/admin");
   return (
     <main className="min-h-dvh bg-cream px-4 py-12">
       <div className="mx-auto max-w-3xl">
@@ -61,6 +63,16 @@ export default function SetupPage() {
           Add these as <strong>Environment Variables</strong> in Vercel (Project → Settings → Environment Variables), or in <code>.env.local</code> when running locally, then
           <strong> redeploy</strong>. The database, admin account and login settings are set up automatically during the build.
         </p>
+        {integ.supabase && !schema.ready && (
+          <div className="mt-6 rounded-2xl border border-red-200 bg-chilli-50 p-5 text-sm text-chilli" role="alert">
+            <p className="font-bold">Keys found, but the database is not set up yet.</p>
+            <p className="mt-1 text-charcoal-700">Database says: <code>{schema.error}</code></p>
+            <p className="mt-2 text-charcoal-700">
+              Set <code>SUPABASE_DB_URL</code> to the <strong>Session pooler</strong> connection string (Supabase → Connect → Session pooler, with your database
+              password filled in — not the “Direct connection”, which Vercel can’t reach), then <strong>Redeploy</strong>. The build log shows the setup report.
+            </p>
+          </div>
+        )}
         <div className="mt-8 space-y-6">
           {GROUPS.map((g) => (
             <section key={g.title} className="card p-5">
