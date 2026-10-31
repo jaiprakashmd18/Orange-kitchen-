@@ -131,3 +131,29 @@ export const deleteCategory = adminAction({ ...STAFF, audit: "menu_category.dele
   check(res);
   return { message: "Category deleted.", entityId: id };
 });
+
+/** One click: publish every draft dish that has a price and veg/non-veg set. */
+export const publishAllReady = adminAction({ ...STAFF, audit: "menu.publish_all", revalidate: ["/admin/menu", "/menu", "/"] }, async () => {
+  const supabase = await createClient();
+  const { data: drafts } = await supabase.from("menu_items").select("id, name, price, is_veg").eq("is_published", false);
+  const ready = (drafts ?? []).filter((d) => d.price !== null && d.is_veg !== null);
+  const notReady = (drafts ?? []).filter((d) => d.price === null || d.is_veg === null);
+  if (ready.length) check(await supabase.from("menu_items").update({ is_published: true }).in("id", ready.map((d) => d.id)));
+  const parts = [ready.length ? `Published ${ready.length} dish${ready.length === 1 ? "" : "es"} — they're live on the menu now.` : "No dishes were ready to publish."];
+  if (notReady.length) {
+    parts.push(`${notReady.length} still need a price or veg/non-veg: ${notReady.slice(0, 8).map((d) => d.name).join(", ")}${notReady.length > 8 ? "…" : ""}. Fill them in the table below.`);
+  }
+  return { message: parts.join(" "), details: { published: ready.length, skipped: notReady.length } };
+});
+
+/** Quick edit from the dishes table: set price + veg and publish in one step. */
+export const quickPricePublish = adminAction({ ...STAFF, audit: "menu_item.quick_published", revalidate: ["/admin/menu", "/menu", "/"] }, async (f) => {
+  const id = z.string().uuid().parse(str(f, "id"));
+  const price = num(f, "price");
+  const veg = str(f, "is_veg");
+  if (price === null || price < 0 || price > 100000) throw new HttpError(400, "Enter a valid price.");
+  if (veg !== "true" && veg !== "false") throw new HttpError(400, "Choose Veg or Non-veg.");
+  const supabase = await createClient();
+  check(await supabase.from("menu_items").update({ price, is_veg: veg === "true", is_published: true }).eq("id", id));
+  return { message: "Saved and published.", entityId: id, details: { price } };
+});

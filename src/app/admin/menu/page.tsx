@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { createClient } from "@/lib/supabase/server";
 import { formatINR } from "@/lib/format";
 import { normalizeItem } from "@/lib/data";
-import { quickToggle } from "./actions";
+import { publishAllReady, quickPricePublish, quickToggle } from "./actions";
 import { autoAddPhotos } from "./photo-actions";
 import type { MenuCategory } from "@/lib/types";
 
@@ -49,6 +49,15 @@ export default async function AdminMenu({ searchParams }: { searchParams: Promis
         actions={<><Link href="/admin/categories" className="btn-secondary">Categories</Link><Link href="/admin/menu/import" className="btn-secondary">Import CSV</Link><Link href="/admin/menu/new" className="btn-primary">+ Add dish</Link></>}
       />
       {sp.deleted && <p className="mb-4 text-sm text-leaf">Dish deleted.</p>}
+      {drafts > 0 && (
+        <ActionForm action={publishAllReady} className="card mb-4 flex flex-wrap items-center justify-between gap-3 border-leaf/30 bg-leaf-50 p-4">
+          <span className="text-sm">
+            <strong>{all.filter((i) => !i.is_published && i.price !== null && i.is_veg !== null).length} of {drafts} draft dish(es)</strong> are ready to go live.
+            {" "}Dishes without a price can be priced right in the table below.
+          </span>
+          <SubmitButton className="btn bg-leaf text-white hover:brightness-110" pendingLabel="Publishing…">✓ Publish all ready dishes</SubmitButton>
+        </ActionForm>
+      )}
       {all.some((i) => !i.image_url) && (
         <ActionForm action={autoAddPhotos} className="card mb-4 flex flex-wrap items-center justify-between gap-3 border-brand-200 bg-brand-50/50 p-4">
           <span className="text-sm">
@@ -74,7 +83,24 @@ export default async function AdminMenu({ searchParams }: { searchParams: Promis
                     {!i.image_url ? <span className="ml-1 text-xs text-charcoal-400">no photo</span> : i.image_source && i.image_source !== "upload" ? <span className="ml-1 text-xs text-charcoal-400">auto photo</span> : null}
                   </td>
                   <td className="text-sm text-charcoal-500">{catName(i.category_id)}</td>
-                  <td className="text-right">{i.price === null ? <Badge tone="warning">No price</Badge> : formatINR(i.price)}</td>
+                  <td className="text-right">
+                    {!i.is_published && (i.price === null || i.is_veg === null) ? (
+                      <ActionForm action={quickPricePublish} className="flex items-center justify-end gap-1.5">
+                        <input type="hidden" name="id" value={i.id} />
+                        <input name="price" type="number" min={0} step="0.01" defaultValue={i.price ?? ""} placeholder="₹" required className="input w-20 px-2 py-1.5 text-sm" aria-label={`Price for ${i.name}`} />
+                        <select name="is_veg" defaultValue={i.is_veg === null ? "" : String(i.is_veg)} required className="input w-24 px-2 py-1.5 text-sm" aria-label="Veg or non-veg">
+                          <option value="" disabled>Type</option>
+                          <option value="true">Veg</option>
+                          <option value="false">Non-veg</option>
+                        </select>
+                        <SubmitButton className="btn-primary btn-sm">Publish</SubmitButton>
+                      </ActionForm>
+                    ) : i.price === null ? (
+                      <Badge tone="warning">No price</Badge>
+                    ) : (
+                      formatINR(i.price)
+                    )}
+                  </td>
                   <td><Toggle id={i.id} field="is_published" value={i.is_published} on="Live" off="Draft" /></td>
                   <td><Toggle id={i.id} field="is_available" value={i.is_available} on="Available" off="Sold out" /></td>
                   <td><Toggle id={i.id} field="is_popular" value={i.is_popular} on="Popular" off="—" /></td>
