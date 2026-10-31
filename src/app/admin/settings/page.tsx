@@ -94,8 +94,8 @@ export default async function SettingsPage() {
             <Field name="latitude" label="Latitude" type="number" step="0.000001" defaultValue={s.latitude} />
             <Field name="longitude" label="Longitude" type="number" step="0.000001" defaultValue={s.longitude} />
           </div>
-          <Field name="google_maps_url" label="Google Maps link" defaultValue={s.google_maps_url} hint="Share → Copy link from Google Maps." />
-          <Field name="google_maps_embed_url" label="Google Maps embed URL" defaultValue={s.google_maps_embed_url} hint="Share → Embed a map → copy the src URL." />
+          <Field name="google_maps_url" label="Google Maps link" defaultValue={s.google_maps_url} hint="Google Maps → your restaurant → Share → Copy link." />
+          <Field name="google_maps_embed_url" label="Google Maps map on website" defaultValue={s.google_maps_embed_url} hint="Google Maps → Share → Embed a map → Copy HTML, and paste the whole code here." />
         </section>
 
         <section className="card grid gap-4 p-5">

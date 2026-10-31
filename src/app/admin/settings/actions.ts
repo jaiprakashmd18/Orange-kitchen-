@@ -5,6 +5,7 @@ import { adminAction, bool, check, num, optStr, str } from "@/lib/admin-action";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { HttpError } from "@/lib/auth";
+import { parseMapsEmbed, parseMapsLink } from "@/lib/maps";
 
 /** Accepts "instagram.com/x", "www…" or "http://…" and normalises to https://. */
 const url = (v: string | null, label: string) => {
@@ -18,6 +19,14 @@ const url = (v: string | null, label: string) => {
     return parsed.toString();
   } catch {
     throw new HttpError(400, `${label}: "${v}" is not a valid web link.`);
+  }
+};
+
+const friendly = <T,>(fn: () => T) => {
+  try {
+    return fn();
+  } catch (e) {
+    throw new HttpError(400, (e as Error).message);
   }
 };
 
@@ -59,8 +68,8 @@ export const saveSettings = adminAction({ audit: "settings.updated", revalidate:
     pincode: optStr(f, "pincode"),
     latitude: lat,
     longitude: lng,
-    google_maps_url: url(optStr(f, "google_maps_url"), "Google Maps link"),
-    google_maps_embed_url: url(optStr(f, "google_maps_embed_url"), "Google Maps embed link"),
+    google_maps_url: friendly(() => parseMapsLink(optStr(f, "google_maps_url"))),
+    google_maps_embed_url: friendly(() => parseMapsEmbed(optStr(f, "google_maps_embed_url"))),
     social_links: socials,
     accepting_orders: bool(f, "accepting_orders"),
     delivery_enabled: bool(f, "delivery_enabled"),
