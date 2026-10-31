@@ -63,7 +63,7 @@ export interface MenuItem {
   description: string | null;
   price: number | null;
   image_url: string | null;
-  image_source?: "upload" | "pexels" | "wikimedia";
+  image_source?: "upload" | "pexels" | "wikimedia" | "pixabay";
   image_credit?: string | null;
   image_credit_url?: string | null;
   is_veg: boolean | null;

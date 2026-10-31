@@ -37,11 +37,11 @@ export async function suggestPhotos(itemId: string): Promise<{ error: string | n
 }
 
 const candidateSchema = z.object({
-  source: z.enum(["pexels", "wikimedia"]),
+  source: z.enum(["pexels", "wikimedia", "pixabay"]),
   thumb: z.string().url(),
-  full: z.string().url().regex(/^https:\/\/(upload\.wikimedia\.org|images\.pexels\.com)\//),
+  full: z.string().url().regex(/^https:\/\/(upload\.wikimedia\.org|images\.pexels\.com|pixabay\.com|cdn\.pixabay\.com)\//),
   credit: z.string().max(200),
-  creditUrl: z.string().url().regex(/^https:\/\/(commons\.wikimedia\.org|www\.pexels\.com)\//),
+  creditUrl: z.string().url().regex(/^https:\/\/(commons\.wikimedia\.org|www\.pexels\.com|pixabay\.com)\//),
   width: z.number(),
   height: z.number(),
 });

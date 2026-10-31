@@ -149,3 +149,16 @@ export const savePexels = adminAction({ ...A, audit: "integration.pexels" }, asy
   await saveSecrets({ pexels_api_key: key }, ctx.userId);
   return { message: "Pexels connected — automatic dish photos will use Pexels." };
 });
+
+export const savePixabay = adminAction({ ...A, audit: "integration.pixabay" }, async (f, ctx) => {
+  if (remove(f)) {
+    await saveSecrets({ pixabay_api_key: "" }, ctx.userId);
+    return { message: "Pixabay removed." };
+  }
+  const key = str(f, "pixabay_api_key");
+  if (!/^[A-Za-z0-9-]{10,}$/.test(key)) throw new HttpError(400, "That doesn't look like a Pixabay key. Copy it from pixabay.com/api/docs (shown after you log in).");
+  const res = await fetch(`https://pixabay.com/api/?key=${encodeURIComponent(key)}&q=dosa&per_page=3`, { cache: "no-store" }).catch(() => null);
+  if (!res?.ok) throw new HttpError(400, "Pixabay rejected this key. Copy it again from pixabay.com/api/docs.");
+  await saveSecrets({ pixabay_api_key: key }, ctx.userId);
+  return { message: "Pixabay connected — automatic dish photos will also search Pixabay." };
+});

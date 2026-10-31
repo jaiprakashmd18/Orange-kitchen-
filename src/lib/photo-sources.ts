@@ -1,7 +1,7 @@
 // Pure helpers for automatic dish photos (unit-tested; no server imports).
 
 export interface PhotoCandidate {
-  source: "pexels" | "wikimedia";
+  source: "pexels" | "wikimedia" | "pixabay";
   thumb: string; // small preview
   full: string; // ~1000px image to copy into our storage
   credit: string;
@@ -41,6 +41,28 @@ export function parsePexels(json: PexelsResponse): PhotoCandidate[] {
     width: p.width,
     height: p.height,
   }));
+}
+
+type PixabayResponse = {
+  hits?: { pageURL: string; webformatURL: string; largeImageURL: string; imageWidth: number; imageHeight: number; user: string }[];
+};
+
+export function parsePixabay(json: PixabayResponse): PhotoCandidate[] {
+  return (json.hits ?? [])
+    .filter((h) => h.largeImageURL && h.imageWidth >= 600)
+    .map((h) => ({
+      source: "pixabay" as const,
+      thumb: h.webformatURL,
+      full: h.largeImageURL,
+      credit: `Image by ${h.user} on Pixabay`,
+      creditUrl: h.pageURL,
+      width: h.imageWidth,
+      height: h.imageHeight,
+    }));
+}
+
+export function pixabaySearchUrl(key: string, query: string) {
+  return `https://pixabay.com/api/?${new URLSearchParams({ key, q: query.slice(0, 100), image_type: "photo", category: "food", orientation: "horizontal", safesearch: "true", per_page: "10" })}`;
 }
 
 type CommonsResponse = {

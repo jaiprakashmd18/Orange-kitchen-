@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { requireRole } from "@/lib/auth";
 import { getConfig, getIntegrationStatus, mask, type SecretKey } from "@/lib/config";
 import { publicEnv } from "@/lib/env";
-import { savePexels, saveEmail, saveRazorpay, saveSupabaseToken, saveWhatsApp, sendTestEmail } from "./actions";
+import { savePexels, savePixabay, saveEmail, saveRazorpay, saveSupabaseToken, saveWhatsApp, sendTestEmail } from "./actions";
 
 export const metadata = { title: "Integrations" };
 export const maxDuration = 60;
@@ -157,9 +157,27 @@ export default async function IntegrationsPage() {
       </Card>
 
       <Card
+        title="📷 Better dish photos — Pixabay (optional)"
+        status={<Status on={st.pixabay} />}
+        help={
+          <>
+            Not required: dish photos already come from Wikimedia Commons with no key. For more choice, sign up free at{" "}
+            <a href="https://pixabay.com/accounts/register/" target="_blank" rel="noopener noreferrer" className="link">pixabay.com</a>, then open{" "}
+            <a href="https://pixabay.com/api/docs/" target="_blank" rel="noopener noreferrer" className="link">pixabay.com/api/docs</a>. Your key is shown in the “Parameters” section (next to <em>key</em>, highlighted in green).
+          </>
+        }
+      >
+        <ActionForm action={savePixabay} className="flex flex-wrap items-end gap-3">
+          <div className="min-w-64 flex-1">{field("pixabay_api_key", "Pixabay API key", { secret: true })}</div>
+          <SubmitButton pendingLabel="Checking…">Test &amp; save</SubmitButton>
+        </ActionForm>
+        <div className="mt-2"><Remove action={savePixabay} show={c.source.pixabay_api_key === "admin"} /></div>
+      </Card>
+
+      <Card
         title="📷 Better dish photos — Pexels (optional)"
         status={<Status on={st.pexels} />}
-        help={<>Free key from <a href="https://www.pexels.com/api/" target="_blank" rel="noopener noreferrer" className="link">pexels.com/api</a>. Without it, automatic photos come from Wikimedia Commons.</>}
+        help={<>Optional — only if you already have a key from <a href="https://www.pexels.com/api/" target="_blank" rel="noopener noreferrer" className="link">pexels.com/api</a>. Not needed: photos work without it.</>}
       >
         <ActionForm action={savePexels} className="flex flex-wrap items-end gap-3">
           <div className="min-w-64 flex-1">{field("pexels_api_key", "Pexels API key", { secret: true })}</div>

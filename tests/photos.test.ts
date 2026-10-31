@@ -34,3 +34,17 @@ test("commons URL searches the File namespace for bitmaps", () => {
   assert.equal(u.searchParams.get("gsrnamespace"), "6");
   assert.equal(u.searchParams.get("gsrsearch"), "Idli filetype:bitmap");
 });
+
+import { parsePixabay, pixabaySearchUrl } from "../src/lib/photo-sources";
+
+test("parses Pixabay hits and builds a food-photo search", () => {
+  const out = parsePixabay({ hits: [
+    { pageURL: "https://pixabay.com/photos/dosa-1/", webformatURL: "https://pixabay.com/get/w.jpg", largeImageURL: "https://pixabay.com/get/l.jpg", imageWidth: 4000, imageHeight: 2600, user: "chef" },
+    { pageURL: "p", webformatURL: "w", largeImageURL: "l", imageWidth: 300, imageHeight: 200, user: "x" },
+  ] });
+  assert.equal(out.length, 1);
+  assert.equal(out[0].credit, "Image by chef on Pixabay");
+  const u = new URL(pixabaySearchUrl("k", "Masala Dosa"));
+  assert.equal(u.searchParams.get("category"), "food");
+  assert.equal(u.searchParams.get("q"), "Masala Dosa");
+});

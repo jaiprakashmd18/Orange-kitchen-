@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { publicEnv } from "@/lib/env";
 import { getConfig } from "@/lib/config";
-import { commonsSearchUrl, parseCommons, parsePexels, photoQueries, type PhotoCandidate } from "@/lib/photo-sources";
+import { commonsSearchUrl, parseCommons, parsePexels, parsePixabay, photoQueries, pixabaySearchUrl, type PhotoCandidate } from "@/lib/photo-sources";
 
 // Automatic dish photos. Uses Pexels when PEXELS_API_KEY is set (best food
 // photography, free licence), otherwise Wikimedia Commons (no key needed,
@@ -23,7 +23,10 @@ async function getJson<T>(url: string, headers: Record<string, string> = {}): Pr
   }
 }
 
-export const photoProvider = async () => ((await getConfig()).pexels_api_key ? "Pexels" : "Wikimedia Commons");
+export const photoProvider = async () => {
+  const c = await getConfig();
+  return [c.pexels_api_key && "Pexels", c.pixabay_api_key && "Pixabay", "Wikimedia Commons"].filter(Boolean).join(" / ");
+};
 
 /** Up to `limit` candidate photos for a dish. */
 export async function findPhotos(dish: string, category: string | null, limit = 6): Promise<PhotoCandidate[]> {
@@ -36,7 +39,7 @@ export async function findPhotos(dish: string, category: string | null, limit = 
       out.push(x);
     }
   };
-  const pexelsKey = (await getConfig()).pexels_api_key;
+  const { pexels_api_key: pexelsKey, pixabay_api_key: pixabayKey } = await getConfig();
   for (const q of photoQueries(dish, category)) {
     if (out.length >= limit) break;
     if (pexelsKey) {
@@ -46,6 +49,10 @@ export async function findPhotos(dish: string, category: string | null, limit = 
       );
       if (json) add(parsePexels(json));
     }
+    if (pixabayKey) {
+      const json = await getJson<Parameters<typeof parsePixabay>[0]>(pixabaySearchUrl(pixabayKey, q));
+      if (json) add(parsePixabay(json));
+    }
     const commons = await getJson<Parameters<typeof parseCommons>[0]>(commonsSearchUrl(q));
     if (commons) add(parseCommons(commons));
   }
@@ -54,7 +61,7 @@ export async function findPhotos(dish: string, category: string | null, limit = 
 
 /** Downloads a candidate into Storage and sets it as the dish photo. */
 export async function applyPhoto(itemId: string, c: PhotoCandidate) {
-  const allowed = /^https:\/\/(upload\.wikimedia\.org|images\.pexels\.com)\//;
+  const allowed = /^https:\/\/(upload\.wikimedia\.org|images\.pexels\.com|pixabay\.com|cdn\.pixabay\.com)\//;
   if (!allowed.test(c.full)) throw new Error("Unsupported image source.");
   const res = await fetch(c.full, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20_000) });
   const type = res.headers.get("content-type") ?? "";

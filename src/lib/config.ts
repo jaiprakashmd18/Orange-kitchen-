@@ -24,6 +24,7 @@ export const SECRET_KEYS = {
   whatsapp_order_template: "WHATSAPP_ORDER_TEMPLATE",
   whatsapp_template_lang: "WHATSAPP_TEMPLATE_LANG",
   pexels_api_key: "PEXELS_API_KEY",
+  pixabay_api_key: "PIXABAY_API_KEY",
   supabase_access_token: "SUPABASE_ACCESS_TOKEN",
 } as const;
 
@@ -96,6 +97,7 @@ export async function getIntegrationStatus() {
     email: smtp || Boolean(c.resend_api_key && c.email_from),
     whatsapp: Boolean(c.whatsapp_access_token && c.whatsapp_phone_number_id && c.whatsapp_order_template),
     pexels: Boolean(c.pexels_api_key),
+    pixabay: Boolean(c.pixabay_api_key),
     supabaseToken: Boolean(c.supabase_access_token),
     cron: Boolean(process.env.CRON_SECRET),
   };
