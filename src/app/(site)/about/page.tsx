@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 const PILLARS = [
   { title: "Our food philosophy", body: "Food should taste like it was made for you — because it was. We keep our menu focused on South Indian favourites we can cook well, every single day." },
-  { title: "Quality & freshness", body: "Every order is prepared after you place it. Dishes that run out are marked sold out on the menu rather than substituted." },
+  { title: "Quality & freshness", body: "Freshly cooked with premium ingredients and packed hygienically. Dishes that run out are marked sold out on the menu rather than substituted." },
   { title: "Our cooking approach", body: "Traditional South Indian cooking: freshly ground masalas, slow-simmered kuzhambu and gravies, and breakfast staples made the way they should be." },
 ];
 
@@ -22,14 +22,20 @@ export default async function AboutPage() {
   const settings = await getSettings();
   return (
     <>
+      <section className="container-page pt-8 sm:pt-12">
+        <div className="relative overflow-hidden rounded-3xl shadow-card ring-1 ring-charcoal/5">
+          <Image src="/brand/banner.webp" alt="Orange Kitchen — South Indian flavours for every mood: breakfast, lunch, dinner, tea & coffee. Shop 32, Pillaiyar Koil Street, Surapet Service Road, Chennai 66. +91 80722 72313" width={1600} height={666} priority sizes="(min-width: 1280px) 1216px, 100vw" className="h-auto w-full" />
+        </div>
+      </section>
       <section className="container-page py-14 sm:py-20">
         <Reveal className="max-w-3xl">
           <p className="eyebrow">About us</p>
           <h1 className="mt-3 text-5xl sm:text-6xl">{settings.name}</h1>
-          <p className="mt-4 font-display text-2xl italic text-brand-700">{settings.tagline}</p>
+          <p className="mt-4 font-display text-2xl text-brand-700">{settings.tagline}</p>
+          <p className="mt-1 text-sm uppercase tracking-[0.25em] text-charcoal-500">Homely taste · Everyday delights</p>
           <p className="mt-6 text-lg leading-relaxed text-charcoal-700">
             {settings.name} is a modern, welcoming restaurant at {fullAddress(settings)}, serving delicious South Indian vegetarian and
-            non-vegetarian food — for dine-in guests, takeaway and home delivery.
+            non-vegetarian food — breakfast, lunch, dinner, and tea &amp; coffee — for takeaway and home delivery.
           </p>
         </Reveal>
       </section>

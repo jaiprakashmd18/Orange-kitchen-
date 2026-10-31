@@ -20,7 +20,7 @@ export const saveSettings = adminAction({ audit: "settings.updated", revalidate:
   const email = optStr(f, "email");
   if (email && !z.string().email().safeParse(email).success) throw new HttpError(400, "Email looks invalid.");
   const socials: Record<string, string> = {};
-  for (const k of ["instagram", "facebook", "youtube", "x", "google"]) {
+  for (const k of ["instagram", "facebook", "youtube", "x", "google", "zomato", "swiggy"]) {
     const v = url(optStr(f, `social_${k}`), k);
     if (v) socials[k] = v;
   }

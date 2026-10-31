@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { Fredoka, Plus_Jakarta_Sans } from "next/font/google";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { ServiceWorkerRegister } from "@/components/site/ServiceWorkerRegister";
 import { getSessionUser } from "@/lib/auth";
@@ -7,7 +7,8 @@ import { publicEnv } from "@/lib/env";
 import "./globals.css";
 
 const sans = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const display = Fraunces({ subsets: ["latin"], variable: "--font-display", display: "swap", axes: ["SOFT", "opsz"] });
+// Rounded display face to echo the bubbly Orange Kitchen wordmark
+const display = Fredoka({ subsets: ["latin"], variable: "--font-display", display: "swap", weight: ["500", "600", "700"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicEnv.siteUrl),
@@ -33,8 +34,9 @@ export const metadata: Metadata = {
     locale: "en_IN",
     siteName: "Orange Kitchen",
     title: "Orange Kitchen — Good Food. Great Taste. Delivered Fresh.",
-    description: "Freshly prepared South Indian favourites in Surapet, Chennai. Order online for delivery or takeaway.",
+    description: "Homely taste, everyday delights. South Indian breakfast, lunch, dinner, tea & coffee in Surapet, Chennai. Order online for delivery or takeaway.",
     url: "/",
+    images: [{ url: "/brand/og.jpg", width: 1200, height: 630, alt: "Orange Kitchen — South Indian flavours for every mood" }],
   },
   twitter: { card: "summary_large_image" },
   appleWebApp: { capable: true, title: "Orange Kitchen", statusBarStyle: "default" },
@@ -52,7 +54,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export const viewport: Viewport = {
-  themeColor: "#F26B1D",
+  themeColor: "#F25C05",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

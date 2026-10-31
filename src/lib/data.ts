@@ -22,7 +22,7 @@ const FALLBACK_SETTINGS: RestaurantSettings = {
   logo_url: null,
   announcement: null,
   phone: "+918072272313",
-  whatsapp: null,
+  whatsapp: "+918072272313",
   email: null,
   address_line1: "Shop 32, Pillaiyar Koil Street",
   address_line2: "Surapet Service Road",

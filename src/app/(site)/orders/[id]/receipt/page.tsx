@@ -20,7 +20,11 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
       <article className="card p-8 print:shadow-none print:ring-0">
         <header className="flex flex-wrap justify-between gap-4 border-b border-charcoal/10 pb-6">
           <div>
-            <p className="font-display text-2xl font-bold"><span className="text-brand-600">ORANGE</span> KITCHEN</p>
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={s.logo_url ?? "/brand/logo-256.png"} alt="" className="h-16 w-16 object-contain" />
+              <p className="font-display text-2xl font-bold"><span className="text-brand-600">ORANGE</span> KITCHEN</p>
+            </div>
             <p className="mt-1 text-xs text-charcoal-500">{fullAddress(s)}</p>
             {s.phone && <p className="text-xs text-charcoal-500">{formatPhone(s.phone)}</p>}
             {s.gstin && <p className="text-xs text-charcoal-500">GSTIN: {s.gstin}</p>}

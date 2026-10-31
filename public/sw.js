@@ -1,12 +1,12 @@
 // Orange Kitchen service worker: caches static assets for speed and shows an
 // offline page. Never caches API calls, auth, checkout, admin or order pages
 // so prices, payments and order status are always live.
-const VERSION = "ok-v1";
+const VERSION = "ok-v2";
 const STATIC = `${VERSION}-static`;
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(STATIC).then((c) => c.addAll([OFFLINE_URL, "/icons/icon-192.png"])).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(STATIC).then((c) => c.addAll([OFFLINE_URL, "/icons/icon-192.png", "/brand/logo-256.png"])).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {

@@ -48,14 +48,14 @@ function escapeHtml(s: string) {
 
 async function sendEmail(to: string, subject: string, text: string, order: Order) {
   const url = `${publicEnv.siteUrl}/orders/${order.id}`;
-  const html = `<!doctype html><html><body style="margin:0;background:#FFF8F0;font-family:Arial,sans-serif;color:#1F1F1F">
+  const html = `<!doctype html><html><body style="margin:0;background:#FFFAEE;font-family:Arial,sans-serif;color:#2C1408">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px">
   <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;padding:32px">
-  <tr><td style="font-size:20px;font-weight:bold;color:#E8590C;letter-spacing:1px">ORANGE KITCHEN</td></tr>
+  <tr><td><img src="${publicEnv.siteUrl}/brand/logo-256.png" width="72" height="72" alt="Orange Kitchen" style="display:block;border:0"></td></tr>
   <tr><td style="padding-top:16px;font-size:18px;font-weight:bold">${escapeHtml(subject)}</td></tr>
   <tr><td style="padding-top:8px;font-size:15px;line-height:1.6">${escapeHtml(text)}</td></tr>
   <tr><td style="padding-top:16px;font-size:14px;color:#555">Order ${escapeHtml(order.order_number)} · Total ${escapeHtml(formatINR(order.total_amount))}</td></tr>
-  <tr><td style="padding-top:24px"><a href="${url}" style="background:#E8590C;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:bold">Track your order</a></td></tr>
+  <tr><td style="padding-top:24px"><a href="${url}" style="background:#CC4A0A;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:bold">Track your order</a></td></tr>
   </table></td></tr></table></body></html>`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",

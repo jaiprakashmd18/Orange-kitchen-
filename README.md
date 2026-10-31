@@ -60,7 +60,9 @@ Local: `npm install && cp .env.example .env.local && npm run setup && npm run de
 
 ## Content still needed from Orange Kitchen
 None of this has been invented. Enter it in the admin dashboard:
-- **Official logo** (Admin → Settings → Logo), then `npm run icons -- logo.png` for the app icons. Until then the site shows a text wordmark and a neutral placeholder icon.
+- ~~Logo~~ ✓ Official logo, mascot, banner and app icons are built in (`public/brand/`). Uploading a different logo in Admin → Settings overrides the header logo.
+- ~~Meal periods & WhatsApp~~ ✓ Breakfast, Lunch, Dinner, Tea & Coffee categories and WhatsApp +91 80722 72313 are seeded from the banner.
+- **Zomato / Swiggy links** (Admin → Settings → Social media & delivery apps) — the "Order on" buttons appear once added.
 - **Menu prices, descriptions, photos and veg/non-veg flags.** The sections and dishes you named are seeded as categories and *unpublished drafts*. A dish can't be published without a price. The fastest route is a spreadsheet uploaded through **Admin → Dishes → Import CSV**.
 - Opening hours, holidays, delivery pincodes and fees, pickup slots, tax rate, packaging charge, minimum order.
 - WhatsApp number, email, Google Maps link, social links, GSTIN/FSSAI, "Our story" text, restaurant photos.

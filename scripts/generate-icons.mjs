@@ -1,5 +1,5 @@
 // Generates PWA / favicon icons.
-//   node scripts/generate-icons.mjs path/to/orange-kitchen-logo.png
+//   node scripts/generate-icons.mjs path/to/orange-kitchen-logo.png [#background]
 // With a logo file, icons are cut from the restaurant's real logo on a
 // white/orange background. Without one, a neutral placeholder (a plain bowl
 // glyph — not a logo) is produced; replace it before launch.
@@ -10,6 +10,7 @@ import path from "node:path";
 const out = path.resolve("public/icons");
 mkdirSync(out, { recursive: true });
 const logo = process.argv[2];
+const BG = process.argv[3] || "#ffffff"; // optional background colour, e.g. "#FFFAEE"
 if (logo && !existsSync(logo)) {
   console.error(`Logo not found: ${logo}`);
   process.exit(1);
@@ -25,7 +26,7 @@ const placeholder = (size, pad) => Buffer.from(`
   </g>
 </svg>`);
 
-async function make(file, size, { maskable = false, bg = "#ffffff" } = {}) {
+async function make(file, size, { maskable = false, bg = BG } = {}) {
   const pad = maskable ? Math.round(size * 0.2) : Math.round(size * 0.08);
   let img;
   if (logo) {

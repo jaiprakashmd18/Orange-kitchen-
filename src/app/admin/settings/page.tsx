@@ -99,9 +99,15 @@ export default async function SettingsPage() {
         </section>
 
         <section className="card grid gap-4 p-5">
-          <h2 className="font-sans font-bold">Social media</h2>
-          {(["instagram", "facebook", "youtube", "x", "google"] as const).map((k) => (
-            <Field key={k} name={`social_${k}`} label={k === "google" ? "Google Business profile" : k[0].toUpperCase() + k.slice(1)} defaultValue={s.social_links[k]} placeholder="https://" />
+          <h2 className="font-sans font-bold">Social media &amp; delivery apps</h2>
+          {(["instagram", "facebook", "youtube", "x", "google", "zomato", "swiggy"] as const).map((k) => (
+            <Field
+              key={k}
+              name={`social_${k}`}
+              label={k === "google" ? "Google Business profile" : k === "zomato" ? "Zomato restaurant page" : k === "swiggy" ? "Swiggy restaurant page" : k[0].toUpperCase() + k.slice(1)}
+              defaultValue={s.social_links[k]}
+              placeholder="https://"
+            />
           ))}
         </section>
 

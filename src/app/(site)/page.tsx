@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { DishCard } from "@/components/menu/DishCard";
+import Image from "next/image";
 import { DishImage } from "@/components/menu/DishImage";
+import { BRAND_LOGO } from "@/components/site/Logo";
+import { whatsappHref } from "@/lib/format";
 import { Reveal } from "@/components/home/Reveal";
 import { LocationSection } from "@/components/home/LocationSection";
 import { Icon, type IconName } from "@/components/ui/Icon";
@@ -10,11 +13,19 @@ import { isSpecialToday } from "@/lib/schedule";
 
 export const revalidate = 0;
 
+// The four promises from the Orange Kitchen banner
 const WHY: { icon: IconName; title: string; body: string }[] = [
-  { icon: "clock", title: "Freshly prepared", body: "Every order is cooked when you place it — never pre-packed or reheated." },
-  { icon: "heart", title: "South Indian at heart", body: "Breakfast classics, full meals, seafood and our special gravies, veg and non-veg." },
-  { icon: "bike", title: "Delivery or takeaway", body: "Get it delivered across our service areas, or pick a convenient time and collect it yourself." },
-  { icon: "check", title: "Secure online payment", body: "Pay safely with UPI, cards or net banking through Razorpay, and track your order live." },
+  { icon: "clock", title: "Freshly cooked", body: "Every order is cooked when you place it — hot, fresh and full of flavour." },
+  { icon: "star", title: "Premium ingredients", body: "Good food starts with good ingredients, chosen with care every day." },
+  { icon: "bag", title: "Hygienic packaging", body: "Packed cleanly and securely so it reaches you just the way it left our kitchen." },
+  { icon: "heart", title: "Homely taste", body: "South Indian food that tastes like home — comforting, honest and satisfying." },
+];
+
+const MEALS = [
+  { label: "Breakfast", slug: "breakfast", tone: "bg-[#2F7D32]" },
+  { label: "Lunch", slug: "lunch", tone: "bg-brand-600" },
+  { label: "Dinner", slug: "dinner", tone: "bg-[#8E1B1B]" },
+  { label: "Tea & Coffee", slug: "tea-coffee", tone: "bg-[#5A2E14]" },
 ];
 
 export default async function HomePage() {
@@ -36,13 +47,14 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-brand-200/50 blur-3xl" aria-hidden />
         <div className="container-page relative grid items-center gap-12 py-12 sm:py-20 lg:grid-cols-[1.1fr_1fr] lg:py-24">
           <Reveal>
-            <p className="eyebrow">{settings.tagline}</p>
+            <p className="eyebrow">Homely taste · Everyday delights</p>
             <h1 className="mt-4 text-5xl leading-[1.05] sm:text-6xl lg:text-7xl">
               Good Food. Great Taste. <span className="text-brand-600">Delivered Fresh.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-charcoal-500">
               Discover delicious South Indian favourites, freshly prepared and served with love.
             </p>
+            <p className="mt-2 font-display text-xl font-medium text-brand-700">South Indian flavours for every mood!</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/menu" className="btn-primary px-7 text-base">
                 ORDER NOW <Icon name="arrowRight" className="h-4 w-4" />
@@ -60,24 +72,31 @@ export default async function HomePage() {
           </Reveal>
 
           <Reveal delay={0.1} className="relative">
-            <div className="relative mx-auto aspect-square max-w-md overflow-hidden rounded-[2.5rem] shadow-lift ring-8 ring-white lg:max-w-none">
-              {heroDish ? (
-                <DishImage src={heroDish.image_url} alt={heroDish.name} className="absolute inset-0" priority sizes="(min-width: 1024px) 45vw, 90vw" />
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-brand-500 via-brand-400 to-brand-300 p-10 text-center text-white">
-                  <span className="font-display text-6xl font-bold drop-shadow-sm sm:text-7xl">Orange</span>
-                  <span className="font-display text-6xl font-bold drop-shadow-sm sm:text-7xl">Kitchen</span>
-                  <span className="mt-6 text-sm font-semibold uppercase tracking-[0.3em] text-white/90">Surapet · Chennai</span>
-                </div>
-              )}
+            <div className="relative mx-auto aspect-square max-w-md lg:max-w-none">
+              <div className="absolute inset-6 rounded-full bg-gradient-to-br from-brand-200 via-brand-100 to-cream-200" aria-hidden />
+              <Image src={BRAND_LOGO} alt={`${settings.name} — chef orange mascot`} fill priority sizes="(min-width: 1024px) 45vw, 90vw" className="relative rounded-[2.5rem] object-contain mix-blend-multiply" />
             </div>
             {heroDish && (
-              <div className="absolute -bottom-4 left-4 rounded-2xl bg-white px-4 py-3 shadow-card sm:left-8">
-                <p className="text-xs text-charcoal-500">Featured</p>
-                <p className="font-bold">{heroDish.name}</p>
-              </div>
+              <Link href="/menu" className="absolute -bottom-2 left-2 flex items-center gap-3 rounded-2xl bg-white p-2 pr-4 shadow-card sm:left-6">
+                <DishImage src={heroDish.image_url} alt={heroDish.name} className="h-14 w-14 rounded-xl" sizes="56px" />
+                <span><span className="block text-xs text-charcoal-500">Try today</span><span className="font-bold">{heroDish.name}</span></span>
+              </Link>
             )}
           </Reveal>
+        </div>
+      </section>
+
+      {/* Meal times (from the Orange Kitchen banner) */}
+      <section aria-label="Meal times" className="container-page -mt-4 pb-8">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {MEALS.map((m) => {
+            const exists = topCategories.some((c) => c.slug === m.slug);
+            return (
+              <Link key={m.slug} href={exists ? `/menu#${m.slug}` : "/menu"} className={`${m.tone} rounded-2xl px-4 py-4 text-center font-display text-lg font-semibold uppercase tracking-wide text-white shadow-card transition hover:-translate-y-0.5`}>
+                {m.label}
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -155,7 +174,7 @@ export default async function HomePage() {
       <section className="section bg-brand-50/60" aria-labelledby="why-title">
         <div className="container-page">
           <p className="eyebrow">Why choose Orange Kitchen?</p>
-          <h2 id="why-title" className="mt-2 max-w-2xl text-4xl">Honest food, cooked fresh, brought to you with care</h2>
+          <h2 id="why-title" className="mt-2 max-w-2xl text-4xl">Homely taste, everyday delights</h2>
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {WHY.map((w, idx) => (
               <Reveal key={w.title} delay={idx * 0.05}>
@@ -198,6 +217,26 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      {(settings.whatsapp || settings.social_links.zomato || settings.social_links.swiggy) && (
+        <section className="bg-charcoal py-12 text-white" aria-labelledby="order-elsewhere">
+          <div className="container-page flex flex-col items-center justify-between gap-6 text-center md:flex-row md:text-left">
+            <div>
+              <h2 id="order-elsewhere" className="text-3xl text-white">Prefer another way to order?</h2>
+              <p className="mt-1 text-white/70">Order directly on our website for the best experience — or reach us on your favourite app.</p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-3">
+              {settings.whatsapp && (
+                <a href={whatsappHref(settings.whatsapp, "Hi Orange Kitchen! I'd like to place an order.")} target="_blank" rel="noopener noreferrer" className="btn bg-[#25D366] text-white hover:brightness-95">
+                  <Icon name="whatsapp" className="h-4 w-4" /> WhatsApp
+                </a>
+              )}
+              {settings.social_links.zomato && <a href={settings.social_links.zomato} target="_blank" rel="noopener noreferrer" className="btn bg-[#E23744] text-white hover:brightness-95">Zomato</a>}
+              {settings.social_links.swiggy && <a href={settings.social_links.swiggy} target="_blank" rel="noopener noreferrer" className="btn bg-[#FC8019] text-white hover:brightness-95">Swiggy</a>}
+            </div>
+          </div>
+        </section>
+      )}
 
       <LocationSection settings={settings} hours={hours} holidays={holidays} />
     </>

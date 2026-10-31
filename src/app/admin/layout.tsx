@@ -18,7 +18,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-dvh bg-[#F7F4F0] lg:grid lg:grid-cols-[250px_1fr]">
       <aside className="bg-charcoal p-4 text-white lg:sticky lg:top-0 lg:h-dvh lg:overflow-y-auto lg:p-5">
         <div className="mb-4 flex items-center justify-between lg:mb-8">
-          <Link href="/admin" className="font-display text-lg font-bold"><span className="text-brand-400">ORANGE</span> KITCHEN <span className="ml-1 rounded bg-white/10 px-1.5 py-0.5 font-sans text-[10px] uppercase tracking-wider">{roles.includes("admin") ? "Admin" : "Staff"}</span></Link>
+          <Link href="/admin" className="flex items-center gap-2 font-display text-lg font-bold">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/mascot.webp" alt="" className="h-9 w-9 rounded-full bg-cream" />
+            <span><span className="text-brand-400">ORANGE</span> KITCHEN</span> <span className="ml-1 rounded bg-white/10 px-1.5 py-0.5 font-sans text-[10px] uppercase tracking-wider">{roles.includes("admin") ? "Admin" : "Staff"}</span></Link>
         </div>
         <AdminNav isAdmin={roles.includes("admin")} />
         <div className="mt-8 hidden border-t border-white/10 pt-4 text-xs text-white/50 lg:block">

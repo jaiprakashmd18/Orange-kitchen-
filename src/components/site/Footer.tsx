@@ -5,7 +5,7 @@ import { DAY_NAMES, formatClock, formatPhone, telHref, whatsappHref } from "@/li
 import { fullAddress, mapsLink } from "@/lib/data";
 import type { OperatingHour, RestaurantSettings } from "@/lib/types";
 
-const SOCIAL_LABELS: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", youtube: "YouTube", x: "X", google: "Google" };
+const SOCIAL_LABELS: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", youtube: "YouTube", x: "X", google: "Google", zomato: "Zomato", swiggy: "Swiggy" };
 
 export function Footer({ settings, hours }: { settings: RestaurantSettings; hours: OperatingHour[] }) {
   const socials = Object.entries(settings.social_links ?? {}).filter(([, url]) => Boolean(url));
@@ -15,7 +15,8 @@ export function Footer({ settings, hours }: { settings: RestaurantSettings; hour
       <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Logo logoUrl={settings.logo_url} name={settings.name} light />
-          <p className="mt-4 font-display text-lg italic text-brand-300">{settings.tagline}</p>
+          <p className="mt-4 font-display text-lg text-brand-300">{settings.tagline}</p>
+          <p className="mt-1 text-xs uppercase tracking-[0.25em] text-white/60">Homely taste · Everyday delights</p>
           {socials.length > 0 && (
             <ul className="mt-6 flex flex-wrap gap-3">
               {socials.map(([key, url]) => (

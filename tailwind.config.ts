@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
-// Orange Kitchen design tokens. brand-600 is the accessible primary
+// Orange Kitchen design tokens, taken from the official logo and banner.
+// brand-500 ≈ logo orange; brand-600 is the accessible primary
 // (4.6:1 on white); brand-500 is the vivid accent for non-text use.
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
@@ -19,8 +20,9 @@ const config: Config = {
           800: "#7F2E08",
           900: "#5C220A",
         },
-        charcoal: { DEFAULT: "#1F1D1B", 700: "#2E2B28", 500: "#5B5651", 400: "#78716C" },
-        cream: { DEFAULT: "#FFF8F0", 200: "#FBEBDD" },
+        // Warm chocolate brown from the "KITCHEN" wordmark and banner footer
+        charcoal: { DEFAULT: "#2C1408", 700: "#3D2014", 500: "#6B5247", 400: "#8C766B" },
+        cream: { DEFAULT: "#FFFAEE", 200: "#FCF0D6" },
         leaf: { DEFAULT: "#1E8E3E", 50: "#EAF6EE" },
         chilli: { DEFAULT: "#B42318", 50: "#FDECEA" },
       },

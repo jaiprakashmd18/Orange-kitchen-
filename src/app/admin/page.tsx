@@ -38,7 +38,7 @@ export default async function AdminDashboard() {
     { ok: integ.razorpay, label: `Razorpay keys configured (${integ.razorpayMode} mode)` },
     { ok: integ.razorpayWebhook, label: "Razorpay webhook (optional — payments are also auto-reconciled)" },
     { ok: (published.count ?? 0) > 0, label: `Menu published (${published.count ?? 0} dishes live, ${drafts.count ?? 0} drafts need prices)`, href: "/admin/menu" },
-    { ok: Boolean(settings.data?.logo_url), label: "Logo uploaded", href: "/admin/settings" },
+    
     { ok: (hours.count ?? 0) > 0, label: "Opening hours set", href: "/admin/hours" },
     { ok: (areas.count ?? 0) > 0, label: "Delivery areas & fees set", href: "/admin/delivery-areas" },
     { ok: (slots.count ?? 0) > 0, label: "Pickup slots set", href: "/admin/pickup-slots" },

@@ -16,7 +16,11 @@ export default async function DeliveryLayout({ children }: { children: React.Rea
     <div className="min-h-dvh bg-cream">
       <header className="sticky top-0 z-30 bg-charcoal text-white">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3">
-          <Link href="/delivery" className="font-display font-bold"><span className="text-brand-400">OK</span> Delivery</Link>
+          <Link href="/delivery" className="flex items-center gap-2 font-display font-bold">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/mascot.webp" alt="" className="h-8 w-8 rounded-full bg-cream" />
+            <span><span className="text-brand-400">Orange Kitchen</span> Delivery</span>
+          </Link>
           <div className="flex items-center gap-2">
             {me?.is_active && (
               <ActionForm action={toggleDuty}>
