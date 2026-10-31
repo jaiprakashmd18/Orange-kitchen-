@@ -63,6 +63,9 @@ export interface MenuItem {
   description: string | null;
   price: number | null;
   image_url: string | null;
+  image_source?: "upload" | "pexels" | "wikimedia";
+  image_credit?: string | null;
+  image_credit_url?: string | null;
   is_veg: boolean | null;
   is_published: boolean;
   is_available: boolean;
@@ -117,6 +120,7 @@ export interface RestaurantSettings {
   prep_time_minutes: number;
   payment_window_minutes: number;
   upi_enabled: boolean;
+  auto_dish_photos: boolean;
   upi_id: string | null;
   upi_payee_name: string | null;
   pickup_instructions: string | null;

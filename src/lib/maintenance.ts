@@ -105,6 +105,17 @@ export async function runMaintenance(opts: { force?: boolean } = {}) {
     }
   }
 
+  // Gradually fill in representative photos for dishes without one.
+  try {
+    const { data: s } = await db.from("restaurant_settings").select("auto_dish_photos").eq("id", 1).maybeSingle();
+    if (s?.auto_dish_photos !== false) {
+      const { autoPhotosForMissing } = await import("@/lib/food-photos");
+      await autoPhotosForMissing(3);
+    }
+  } catch (e) {
+    console.error("[maintenance] photos", e);
+  }
+
   // Expire last, after any late payments were confirmed above.
   const { data: expired } = await db.rpc("expire_unpaid_orders");
   result.expired = Number(expired ?? 0);

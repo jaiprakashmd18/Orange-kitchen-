@@ -41,3 +41,6 @@ export default function ImportMenuPage() {
     </div>
   );
 }
+
+// Photo search/download and imports can take a while.
+export const maxDuration = 60;

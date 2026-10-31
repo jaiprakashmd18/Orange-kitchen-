@@ -6,6 +6,7 @@ import { adminAction, bool, check, num, optStr, str } from "@/lib/admin-action";
 import { createClient } from "@/lib/supabase/server";
 import { optionGroupsSchema, slugify } from "@/lib/validation";
 import { HttpError } from "@/lib/auth";
+import { queueAutoPhotos } from "@/lib/auto-photos-queue";
 
 const STAFF = { roles: ["admin", "staff"] as ("admin" | "staff")[] };
 
@@ -24,6 +25,9 @@ function parseItem(f: FormData) {
   const published = bool(f, "is_published");
   if (published && price === null) throw new HttpError(400, "Add a price before publishing this dish.");
   if (published && veg === "") throw new HttpError(400, "Choose Veg or Non-veg before publishing.");
+  const imageUrl = optStr(f, "image_url");
+  // Manual upload or removal resets the credit; an unchanged auto photo keeps its credit.
+  const photoMeta = !imageUrl || str(f, "image_source") === "upload" ? { image_source: "upload", image_credit: null, image_credit_url: null } : {};
   const specialFrom = optStr(f, "special_from");
   const specialUntil = optStr(f, "special_until");
   return {
@@ -31,7 +35,8 @@ function parseItem(f: FormData) {
     category_id: z.string().uuid({ message: "Choose a category" }).parse(str(f, "category_id")),
     description: optStr(f, "description")?.slice(0, 1000) ?? null,
     price,
-    image_url: optStr(f, "image_url"),
+    image_url: imageUrl,
+    ...photoMeta,
     is_veg: veg === "" ? null : veg === "true",
     is_published: published,
     is_available: bool(f, "is_available"),
@@ -67,6 +72,7 @@ export const createItem = adminAction({ ...STAFF, audit: "menu_item.created", re
   }
   const created = check(await supabase.from("menu_items").insert({ ...item, slug }).select("id").single()) as { id: string };
   await saveWindows(created.id, str(f, "windows"));
+  if (!item.image_url) await queueAutoPhotos([created.id]);
   redirect(`/admin/menu/${created.id}?saved=1`);
 });
 

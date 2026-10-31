@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatINR } from "@/lib/format";
 import { normalizeItem } from "@/lib/data";
 import { quickToggle } from "./actions";
+import { autoAddPhotos } from "./photo-actions";
 import type { MenuCategory } from "@/lib/types";
 
 export const metadata = { title: "Menu" };
@@ -48,6 +49,14 @@ export default async function AdminMenu({ searchParams }: { searchParams: Promis
         actions={<><Link href="/admin/categories" className="btn-secondary">Categories</Link><Link href="/admin/menu/import" className="btn-secondary">Import CSV</Link><Link href="/admin/menu/new" className="btn-primary">+ Add dish</Link></>}
       />
       {sp.deleted && <p className="mb-4 text-sm text-leaf">Dish deleted.</p>}
+      {all.some((i) => !i.image_url) && (
+        <ActionForm action={autoAddPhotos} className="card mb-4 flex flex-wrap items-center justify-between gap-3 border-brand-200 bg-brand-50/50 p-4">
+          <span className="text-sm">
+            <strong>{all.filter((i) => !i.image_url).length} dish(es) have no photo.</strong> Add representative food photos automatically (credited, replaceable with your own anytime).
+          </span>
+          <SubmitButton pendingLabel="Finding photos…">✨ Auto-add photos</SubmitButton>
+        </ActionForm>
+      )}
       {all.length === 0 ? (
         <EmptyState title="No dishes yet" description="Add your first dish from the uploaded menu." action={{ href: "/admin/menu/new", label: "Add dish" }} />
       ) : (
@@ -62,7 +71,7 @@ export default async function AdminMenu({ searchParams }: { searchParams: Promis
                       {i.is_veg !== null ? <VegMark veg={i.is_veg} /> : <Badge tone="warning">veg?</Badge>} {i.name}
                     </Link>
                     {i.is_special && <Badge tone="info" className="mt-1">Special</Badge>}
-                    {!i.image_url && <span className="ml-1 text-xs text-charcoal-400">no photo</span>}
+                    {!i.image_url ? <span className="ml-1 text-xs text-charcoal-400">no photo</span> : i.image_source && i.image_source !== "upload" ? <span className="ml-1 text-xs text-charcoal-400">auto photo</span> : null}
                   </td>
                   <td className="text-sm text-charcoal-500">{catName(i.category_id)}</td>
                   <td className="text-right">{i.price === null ? <Badge tone="warning">No price</Badge> : formatINR(i.price)}</td>
@@ -78,3 +87,6 @@ export default async function AdminMenu({ searchParams }: { searchParams: Promis
     </div>
   );
 }
+
+// Photo search/download and imports can take a while.
+export const maxDuration = 60;

@@ -12,8 +12,24 @@ const TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/svg
  * Uploads to the public-media Supabase Storage bucket (staff-only write via
  * storage RLS) and puts the public URL into a hidden form field.
  */
-export function ImageUpload({ name, folder, initial, label = "Image" }: { name: string; folder: string; initial?: string | null; label?: string }) {
+export function ImageUpload({
+  name,
+  folder,
+  initial,
+  label = "Image",
+  sourceName,
+  initialSource,
+}: {
+  name: string;
+  folder: string;
+  initial?: string | null;
+  label?: string;
+  /** optional hidden field recording where the image came from ("upload" after a manual upload) */
+  sourceName?: string;
+  initialSource?: string | null;
+}) {
   const [url, setUrl] = useState(initial ?? "");
+  const [source, setSource] = useState(initialSource ?? "upload");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,12 +45,14 @@ export function ImageUpload({ name, folder, initial, label = "Image" }: { name: 
     setBusy(false);
     if (error) return setError(error.message);
     setUrl(supabase.storage.from("public-media").getPublicUrl(path).data.publicUrl);
+    setSource("upload");
   }
 
   return (
     <div>
       <span className="label">{label}</span>
       <input type="hidden" name={name} value={url} />
+      {sourceName && <input type="hidden" name={sourceName} value={source} />}
       <div className="flex items-center gap-4">
         <div className="relative h-24 w-24 overflow-hidden rounded-xl bg-cream-200 ring-1 ring-charcoal/10">
           {url ? <Image src={url} alt="" fill sizes="96px" className="object-cover" unoptimized={url.endsWith(".svg")} /> : <span className="flex h-full items-center justify-center text-xs text-charcoal-400">No image</span>}
@@ -44,7 +62,7 @@ export function ImageUpload({ name, folder, initial, label = "Image" }: { name: 
             {busy ? <Spinner className="h-3 w-3" /> : null} {url ? "Replace" : "Upload"}
             <input type="file" accept={TYPES.join(",")} className="sr-only" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
           </label>
-          {url && <button type="button" className="btn-ghost btn-sm block text-chilli" onClick={() => setUrl("")}>Remove</button>}
+          {url && <button type="button" className="btn-ghost btn-sm block text-chilli" onClick={() => { setUrl(""); setSource("upload"); }}>Remove</button>}
         </div>
       </div>
       {error && <p className="field-error">{error}</p>}

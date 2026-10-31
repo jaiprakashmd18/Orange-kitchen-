@@ -34,7 +34,7 @@ export function DishCard({
           {favourite !== undefined && <FavouriteButton itemId={dish.id} initial={favourite} className="mt-2" />}
         </div>
         <div className="flex w-28 shrink-0 flex-col items-center sm:w-36">
-          <DishImage src={dish.image_url} alt={dish.name} className="aspect-square w-full rounded-xl" sizes="144px" />
+          <DishImage src={dish.image_url} alt={dish.name} className="aspect-square w-full rounded-xl" sizes="144px" representative={dish.image_source === "pexels" || dish.image_source === "wikimedia"} />
           <div className="-mt-5 drop-shadow">
             <AddToCartButton dish={dish} disabled={!orderable} disabledLabel={unavailableReason} />
           </div>
@@ -45,7 +45,7 @@ export function DishCard({
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-charcoal/5 bg-white shadow-card transition hover:-translate-y-0.5 hover:shadow-lift">
       <div className="relative">
-        <DishImage src={dish.image_url} alt={dish.name} className="aspect-[4/3] w-full" />
+        <DishImage src={dish.image_url} alt={dish.name} className="aspect-[4/3] w-full" representative={dish.image_source === "pexels" || dish.image_source === "wikimedia"} />
         {badge && <Badge tone="info" className="absolute left-3 top-3 bg-white/95">{badge}</Badge>}
       </div>
       <div className="flex flex-1 flex-col p-4">

@@ -1,17 +1,24 @@
 import Image from "next/image";
 
 /** Food photo, or a warm neutral placeholder until the restaurant uploads one. */
-export function DishImage({ src, alt, className = "", sizes = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw", priority = false }: {
+export function DishImage({ src, alt, className = "", sizes = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw", priority = false, representative = false }: {
   src: string | null;
   alt: string;
   className?: string;
   sizes?: string;
   priority?: boolean;
+  /** auto-sourced stock photo: labelled so customers know it isn't the actual plate */
+  representative?: boolean;
 }) {
   if (src) {
     return (
       <div className={`relative overflow-hidden bg-cream-200 ${className}`}>
-        <Image src={src} alt={alt} fill sizes={sizes} priority={priority} className="object-cover transition duration-500 group-hover:scale-105" />
+        <Image src={src} alt={representative ? `${alt} (representative image)` : alt} fill sizes={sizes} priority={priority} className="object-cover transition duration-500 group-hover:scale-105" />
+        {representative && (
+          <span className="pointer-events-none absolute bottom-1 right-1 rounded bg-black/45 px-1.5 py-0.5 text-[9px] font-medium leading-none text-white">
+            Representative image
+          </span>
+        )}
       </div>
     );
   }

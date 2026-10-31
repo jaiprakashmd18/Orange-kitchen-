@@ -20,6 +20,7 @@ export async function getMenuView(favouriteIds: string[] = []) {
       description: i.description,
       price: i.price,
       image_url: i.image_url,
+      image_source: i.image_source,
       is_veg: i.is_veg,
       options: i.options ?? [],
       max_per_order: i.max_per_order,

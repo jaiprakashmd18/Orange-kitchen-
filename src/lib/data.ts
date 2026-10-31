@@ -49,6 +49,7 @@ const FALLBACK_SETTINGS: RestaurantSettings = {
   prep_time_minutes: 30,
   payment_window_minutes: 20,
   upi_enabled: false,
+  auto_dish_photos: true,
   upi_id: null,
   upi_payee_name: null,
   pickup_instructions: null,

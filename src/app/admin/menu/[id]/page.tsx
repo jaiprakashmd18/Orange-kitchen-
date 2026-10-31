@@ -48,3 +48,6 @@ export default async function EditItem({ params, searchParams }: { params: Promi
     </div>
   );
 }
+
+// Photo search/download and imports can take a while.
+export const maxDuration = 60;

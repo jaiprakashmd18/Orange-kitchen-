@@ -53,6 +53,7 @@ Local: `npm install && cp .env.example .env.local && npm run setup && npm run de
 | Razorpay (cards, UPI, net banking), refunds | Optional — automatic confirmation; needs your keys (test mode first). Webhook optional: payments and refunds are auto-reconciled |
 | Database, admin account, Auth config | Automatic on deploy from env vars |
 | Menu bulk import / export | Admin → Dishes → Import CSV |
+| Automatic dish photos | New/imported dishes get a credited, freely licensed food photo (Wikimedia Commons, or Pexels with `PEXELS_API_KEY`), labelled "Representative image"; pick alternatives per dish or upload your own |
 | Email notifications | Implemented — **not active until `RESEND_API_KEY` and `EMAIL_FROM` are set** |
 | WhatsApp notifications | Implemented — **not active until WhatsApp Cloud API credentials and an approved template are set** |
 | Phone OTP login | UI implemented — **requires an SMS provider enabled in Supabase Auth** |

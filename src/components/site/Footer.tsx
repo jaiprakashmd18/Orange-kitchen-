@@ -97,6 +97,7 @@ export function Footer({ settings, hours }: { settings: RestaurantSettings; hour
             <Link href="/policies#cancellation" className="hover:text-white">Cancellation &amp; Refunds</Link>
             <Link href="/policies#terms" className="hover:text-white">Terms</Link>
             <Link href="/policies#privacy" className="hover:text-white">Privacy</Link>
+            <Link href="/credits" className="hover:text-white">Photo credits</Link>
           </nav>
         </div>
       </div>

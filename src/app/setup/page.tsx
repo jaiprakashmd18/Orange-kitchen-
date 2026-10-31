@@ -46,6 +46,7 @@ const GROUPS: { title: string; required: boolean; keys: { name: string; help: st
       { name: "WHATSAPP_ACCESS_TOKEN", help: "Meta WhatsApp Cloud API permanent token" },
       { name: "WHATSAPP_PHONE_NUMBER_ID", help: "Meta → WhatsApp → API setup" },
       { name: "WHATSAPP_ORDER_TEMPLATE", help: "Approved template name ({{1}} order, {{2}} status, {{3}} link)" },
+      { name: "PEXELS_API_KEY", help: "Optional — pexels.com/api, for higher-quality automatic dish photos" },
     ],
   },
 ];

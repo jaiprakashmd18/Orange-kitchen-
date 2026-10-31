@@ -114,7 +114,19 @@ export default async function HomePage() {
                 return (
                   <Reveal key={c.id} delay={idx * 0.05}>
                     <Link href={`/menu#${c.slug}`} className="group block h-full overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-charcoal/5 transition hover:-translate-y-0.5 hover:shadow-lift">
-                      <DishImage src={c.image_url} alt={c.name} className="aspect-[16/10] w-full" />
+                      {(() => {
+                        // Category without its own image: borrow the first dish photo in it.
+                        const ids = [c.id, ...subs.map((x) => x.id)];
+                        const dish = c.image_url ? null : items.find((i) => i.image_url && ids.includes(i.category_id));
+                        return (
+                          <DishImage
+                            src={c.image_url ?? dish?.image_url ?? null}
+                            alt={c.name}
+                            className="aspect-[16/10] w-full"
+                            representative={Boolean(dish && dish.image_source && dish.image_source !== "upload")}
+                          />
+                        );
+                      })()}
                       <div className="p-4 sm:p-5">
                         <h3 className="font-display text-2xl">{c.name}</h3>
                         {subs.length > 0 && <p className="mt-1 line-clamp-2 text-sm text-charcoal-500">{subs.map((s) => s.name).join(" · ")}</p>}

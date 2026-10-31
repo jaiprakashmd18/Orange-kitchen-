@@ -8,7 +8,9 @@ import { VegMark } from "@/components/ui/VegMark";
 import { formatINR } from "@/lib/format";
 import type { MenuItem, SelectedOptions } from "@/lib/types";
 
-export type PublicDish = Pick<MenuItem, "id" | "name" | "description" | "price" | "image_url" | "is_veg" | "options" | "max_per_order">;
+export type PublicDish = Pick<MenuItem, "id" | "name" | "description" | "price" | "image_url" | "is_veg" | "options" | "max_per_order"> & {
+  image_source?: MenuItem["image_source"];
+};
 
 function summary(dish: PublicDish, selected: SelectedOptions) {
   return dish.options

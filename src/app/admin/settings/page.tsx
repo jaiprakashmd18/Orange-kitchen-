@@ -72,6 +72,7 @@ export default async function SettingsPage() {
           <Field name="name" label="Restaurant name" defaultValue={s.name} required />
           <Field name="tagline" label="Tagline" defaultValue={s.tagline} />
           <Field name="announcement" label="Announcement bar (optional)" defaultValue={s.announcement} maxLength={200} />
+          <Check name="auto_dish_photos" label="Automatically add representative photos to dishes without one" defaultChecked={s.auto_dish_photos ?? true} />
           <Area name="about_story" label="Our story (About page)" defaultValue={s.about_story} rows={6} hint="Written by the restaurant. Separate paragraphs with a blank line. Leave empty to hide." />
           <Area name="gallery_urls" label="Restaurant photo URLs (one per line)" defaultValue={s.gallery_urls.join("\n")} rows={3} hint="Upload photos via a dish/category image field or Supabase Storage, then paste the links here." />
         </section>

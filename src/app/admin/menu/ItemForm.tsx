@@ -2,6 +2,7 @@ import { ActionForm, SubmitButton, type FormAction } from "@/components/admin/Ac
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { OptionsEditor } from "@/components/admin/OptionsEditor";
 import { WindowsEditor } from "@/components/admin/WindowsEditor";
+import { PhotoPicker } from "@/components/admin/PhotoPicker";
 import type { AvailabilityWindow, MenuCategory, MenuItem } from "@/lib/types";
 
 export function ItemForm({ action, item, categories, windows }: { action: FormAction; item?: MenuItem; categories: MenuCategory[]; windows: AvailabilityWindow[] }) {
@@ -57,7 +58,13 @@ export function ItemForm({ action, item, categories, windows }: { action: FormAc
       </div>
       <div className="space-y-6">
         <section className="card space-y-4 p-5">
-          <ImageUpload name="image_url" folder="menu" initial={item?.image_url} label="Food photo" />
+          <ImageUpload key={item?.image_url ?? "none"} name="image_url" folder="menu" initial={item?.image_url} label="Food photo" sourceName="image_source" initialSource={item?.image_source} />
+          {item?.image_url && item.image_source && item.image_source !== "upload" && (
+            <p className="text-xs text-charcoal-500">
+              Representative photo — {item.image_credit_url ? <a href={item.image_credit_url} target="_blank" rel="noopener noreferrer" className="underline">{item.image_credit}</a> : item.image_credit}. Upload your own food photo to replace it.
+            </p>
+          )}
+          {item && <PhotoPicker itemId={item.id} />}
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_published" defaultChecked={item?.is_published ?? false} className="accent-brand-600" /> Published (visible on menu)</label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_available" defaultChecked={item?.is_available ?? true} className="accent-brand-600" /> Available today (untick = sold out)</label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_popular" defaultChecked={item?.is_popular ?? false} className="accent-brand-600" /> Show in “Popular dishes”</label>

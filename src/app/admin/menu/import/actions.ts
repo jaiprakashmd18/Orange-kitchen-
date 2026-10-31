@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { parseCsv, parseFlag } from "@/lib/csv";
 import { slugify } from "@/lib/validation";
 import { HttpError } from "@/lib/auth";
+import { queueAutoPhotos } from "@/lib/auto-photos-queue";
 import type { MenuCategory } from "@/lib/types";
 
 type Column = "category" | "subcategory" | "name" | "price" | "veg" | "description" | "image_url" | "published" | "available" | "popular";
@@ -110,7 +111,8 @@ export const importMenu = adminAction({ roles: ["admin", "staff"], audit: "menu.
     }
   }
 
+  if (created > 0) await queueAutoPhotos();
   const summary = `${created} added, ${updated} updated${drafts ? `, ${drafts} saved as drafts (missing price or veg/non-veg)` : ""}.`;
   if (errors.length) throw new HttpError(422, `${summary} ${errors.length} row(s) skipped: ${errors.slice(0, 8).join(" ")}${errors.length > 8 ? " …" : ""}`);
-  return { message: `Import complete: ${summary}`, details: { created, updated, drafts } };
+  return { message: `Import complete: ${summary}${created > 0 ? " Photos are being added automatically for new dishes." : ""}`, details: { created, updated, drafts } };
 });

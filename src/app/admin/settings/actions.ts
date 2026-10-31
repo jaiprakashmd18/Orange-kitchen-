@@ -83,6 +83,7 @@ export const saveSettings = adminAction({ audit: "settings.updated", revalidate:
     prep_time_minutes: range(num(f, "prep_time_minutes"), "Preparation time", 5, 240, 30),
     payment_window_minutes: range(num(f, "payment_window_minutes"), "Payment window", 5, 120, 20),
     upi_enabled: bool(f, "upi_enabled"),
+    auto_dish_photos: bool(f, "auto_dish_photos"),
     upi_id: optStr(f, "upi_id")?.replace(/\s/g, "").toLowerCase() ?? null,
     upi_payee_name: optStr(f, "upi_payee_name")?.slice(0, 50) ?? null,
     pickup_instructions: optStr(f, "pickup_instructions"),
