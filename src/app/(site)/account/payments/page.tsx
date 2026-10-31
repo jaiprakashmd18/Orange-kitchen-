@@ -8,8 +8,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 
 export const metadata: Metadata = { title: "Payments & receipts", robots: { index: false } };
 
-const TONE = { captured: "success", refunded: "neutral", refund_pending: "warning", failed: "danger", created: "warning", authorized: "info", partially_refunded: "neutral" } as const;
-const LABEL = { captured: "Paid", refunded: "Refunded", refund_pending: "Refund initiated", failed: "Failed", created: "Not completed", authorized: "Authorised", partially_refunded: "Partially refunded" } as const;
+const TONE = { verification_pending: "info", captured: "success", refunded: "neutral", refund_pending: "warning", failed: "danger", created: "warning", authorized: "info", partially_refunded: "neutral" } as const;
+const LABEL = { verification_pending: "Being verified", captured: "Paid", refunded: "Refunded", refund_pending: "Refund initiated", failed: "Failed", created: "Not completed", authorized: "Authorised", partially_refunded: "Partially refunded" } as const;
 
 export default async function PaymentsPage() {
   const user = await requireUser("/account/payments");

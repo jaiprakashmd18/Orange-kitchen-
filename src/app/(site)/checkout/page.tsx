@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getSettings, fullAddress, mapsLink } from "@/lib/data";
-import { integrationStatus } from "@/lib/env";
+import { availablePaymentMethods } from "@/lib/payment-methods";
 import { CheckoutForm } from "./CheckoutForm";
 import type { Address } from "@/lib/types";
 
@@ -31,7 +31,7 @@ export default async function CheckoutPage() {
           takeaway_enabled: settings.takeaway_enabled,
         }}
         emailVerified={Boolean(user.email_confirmed_at || user.phone_confirmed_at)}
-        paymentsReady={integrationStatus().razorpay}
+        paymentMethods={availablePaymentMethods(settings)}
       />
     </div>
   );

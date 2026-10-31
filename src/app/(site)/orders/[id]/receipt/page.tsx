@@ -59,7 +59,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <div className="flex justify-between border-t border-charcoal/10 pt-2 text-base font-bold"><dt>Total paid</dt><dd>{formatINR(order.total_amount)}</dd></div>
         </dl>
         <p className="mt-6 text-xs text-charcoal-500">
-          Paid online via Razorpay{payment!.method ? ` (${payment!.method})` : ""} · Payment ID {payment!.provider_payment_id}
+          {payment!.provider === "upi" ? "Paid by UPI" : "Paid online via Razorpay"}{payment!.provider !== "upi" && payment!.method ? ` (${payment!.method})` : ""} · {payment!.provider === "upi" ? "UPI transaction ID" : "Payment ID"} {payment!.provider_payment_id}
           {payment!.status !== "captured" && ` · Refund status: ${payment!.status.replace("_", " ")}`}
         </p>
         <p className="mt-2 text-xs text-charcoal-500">This is a payment receipt for your online order{s.gstin ? "" : " and not a tax invoice"}.</p>

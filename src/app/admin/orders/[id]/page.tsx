@@ -11,7 +11,7 @@ import { getRoles } from "@/lib/auth";
 import { STATUS_LABEL, STATUS_TONE, staffNextActions } from "@/lib/order-status";
 import { formatClock, formatDate, formatDateTime, formatINR, formatPhone, telHref, whatsappHref } from "@/lib/format";
 import { providerStatus } from "@/lib/delivery/providers";
-import { assignOwnDelivery, assignThirdParty, retryRefund, updateOrderStatus } from "../actions";
+import { assignOwnDelivery, assignThirdParty, markUpiRefunded, retryRefund, updateOrderStatus, verifyUpiPayment } from "../actions";
 import type { DeliveryPersonnel, DeliveryProvider } from "@/lib/types";
 
 export const metadata = { title: "Order detail" };
@@ -44,6 +44,29 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ i
 
       <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
         <div className="space-y-6">
+          {payment?.provider === "upi" && payment.status === "verification_pending" && (
+            <section className="card border-2 border-brand-400 p-5">
+              <h2 className="font-sans font-bold">Verify UPI payment</h2>
+              <p className="mt-1 text-sm text-charcoal-700">
+                Open your UPI app (GPay Business / bank app) and look for <strong>{formatINR(payment.amount)}</strong> with transaction ID{" "}
+                <strong className="font-mono">{payment.provider_payment_id}</strong>
+                {payment.submitted_at && <> (submitted {formatDateTime(payment.submitted_at)})</>}.
+              </p>
+              <div className="mt-4 flex flex-wrap items-start gap-3">
+                <ActionForm action={verifyUpiPayment}>
+                  <input type="hidden" name="order_id" value={order.id} />
+                  <input type="hidden" name="decision" value="received" />
+                  <SubmitButton>✓ Payment received</SubmitButton>
+                </ActionForm>
+                <ActionForm action={verifyUpiPayment} className="flex flex-wrap items-start gap-2" confirmMessage="Mark this payment as NOT received? The customer will be asked to check their transaction ID.">
+                  <input type="hidden" name="order_id" value={order.id} />
+                  <input type="hidden" name="decision" value="not_received" />
+                  <input name="reason" maxLength={200} className="input w-64 py-2" placeholder="Reason (optional)" />
+                  <SubmitButton className="btn-danger">Not received</SubmitButton>
+                </ActionForm>
+              </div>
+            </section>
+          )}
           {actions.length > 0 && (
             <section className="card p-5">
               <h2 className="font-sans font-bold">Next step</h2>
@@ -194,13 +217,22 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ i
                 <div className="flex justify-between"><dt>Status</dt><dd className="font-semibold uppercase">{payment.status.replace("_", " ")}</dd></div>
                 <div className="flex justify-between"><dt>Amount</dt><dd>{formatINR(payment.amount)}</dd></div>
                 <div className="flex justify-between"><dt>Method</dt><dd className="uppercase">{payment.method ?? "—"}</dd></div>
-                <div className="flex justify-between gap-2"><dt>Razorpay order</dt><dd className="truncate font-mono text-xs">{payment.provider_order_id}</dd></div>
-                <div className="flex justify-between gap-2"><dt>Payment ID</dt><dd className="truncate font-mono text-xs">{payment.provider_payment_id ?? "—"}</dd></div>
+                <div className="flex justify-between gap-2"><dt>Via</dt><dd className="font-semibold">{payment.provider === "upi" ? "Direct UPI" : "Razorpay"}</dd></div>
+                {payment.provider !== "upi" && <div className="flex justify-between gap-2"><dt>Razorpay order</dt><dd className="truncate font-mono text-xs">{payment.provider_order_id}</dd></div>}
+                <div className="flex justify-between gap-2"><dt>{payment.provider === "upi" ? "UPI transaction ID" : "Payment ID"}</dt><dd className="truncate font-mono text-xs">{payment.provider_payment_id ?? "—"}</dd></div>
                 {payment.refund_id && <div className="flex justify-between gap-2"><dt>Refund</dt><dd className="font-mono text-xs">{payment.refund_id}</dd></div>}
                 {payment.failure_reason && <p className="text-chilli">{payment.failure_reason}</p>}
               </dl>
             ) : <p className="mt-2 text-charcoal-500">No payment record.</p>}
-            {refundable && roles.includes("admin") && (
+            {payment?.provider === "upi" && payment.status === "refund_pending" && roles.includes("admin") && (
+              <ActionForm action={markUpiRefunded} className="mt-3 space-y-2">
+                <p className="text-amber-900">Send {formatINR(payment.amount)} back to the customer from your UPI app, then record it here.</p>
+                <input type="hidden" name="order_id" value={order.id} />
+                <input name="refund_ref" maxLength={40} className="input py-2" placeholder="Refund transaction ID (optional)" />
+                <SubmitButton className="btn-secondary btn-sm">Mark refunded</SubmitButton>
+              </ActionForm>
+            )}
+            {refundable && payment?.provider !== "upi" && roles.includes("admin") && (
               <ActionForm action={retryRefund} className="mt-3" confirmMessage="Issue a full refund via Razorpay?">
                 <input type="hidden" name="order_id" value={order.id} />
                 <SubmitButton className="btn-danger btn-sm">Process refund</SubmitButton>

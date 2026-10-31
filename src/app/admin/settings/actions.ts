@@ -3,10 +3,27 @@
 import { z } from "zod";
 import { adminAction, bool, check, num, optStr, str } from "@/lib/admin-action";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { HttpError } from "@/lib/auth";
 
+/** Accepts "instagram.com/x", "www…" or "http://…" and normalises to https://. */
 const url = (v: string | null, label: string) => {
-  if (v && !/^https:\/\/[^\s]+$/.test(v)) throw new HttpError(400, `${label} must be a full https:// link.`);
+  if (!v) return null;
+  let u = v.trim();
+  if (!/^https?:\/\//i.test(u)) u = `https://${u.replace(/^\/+/, "")}`;
+  u = u.replace(/^http:\/\//i, "https://");
+  try {
+    const parsed = new URL(u);
+    if (!parsed.hostname.includes(".")) throw new Error();
+    return parsed.toString();
+  } catch {
+    throw new HttpError(400, `${label}: "${v}" is not a valid web link.`);
+  }
+};
+
+const range = (v: number | null, label: string, min: number, max: number, fallback: number) => {
+  if (v === null) return fallback;
+  if (v < min || v > max) throw new HttpError(400, `${label} must be between ${min} and ${max}.`);
   return v;
 };
 const phone = (v: string | null, label: string) => {
@@ -24,8 +41,7 @@ export const saveSettings = adminAction({ audit: "settings.updated", revalidate:
     const v = url(optStr(f, `social_${k}`), k);
     if (v) socials[k] = v;
   }
-  const gallery = str(f, "gallery_urls").split("\n").map((s) => s.trim()).filter(Boolean);
-  gallery.forEach((g) => url(g, "Gallery image"));
+  const gallery = str(f, "gallery_urls").split("\n").map((s) => s.trim()).filter(Boolean).map((g) => url(g, "Gallery image")!);
   const lat = num(f, "latitude");
   const lng = num(f, "longitude");
   const row = {
@@ -50,13 +66,16 @@ export const saveSettings = adminAction({ audit: "settings.updated", revalidate:
     delivery_enabled: bool(f, "delivery_enabled"),
     takeaway_enabled: bool(f, "takeaway_enabled"),
     delivery_mode_default: str(f, "delivery_mode_default") === "third_party" ? "third_party" : "own",
-    min_order_amount: num(f, "min_order_amount") ?? 0,
-    tax_rate_percent: num(f, "tax_rate_percent") ?? 0,
+    min_order_amount: range(num(f, "min_order_amount"), "Minimum order", 0, 100000, 0),
+    tax_rate_percent: range(num(f, "tax_rate_percent"), "Tax rate", 0, 50, 0),
     tax_label: str(f, "tax_label") || "GST",
     prices_include_tax: bool(f, "prices_include_tax"),
-    packaging_charge: num(f, "packaging_charge") ?? 0,
-    prep_time_minutes: num(f, "prep_time_minutes") ?? 30,
-    payment_window_minutes: num(f, "payment_window_minutes") ?? 20,
+    packaging_charge: range(num(f, "packaging_charge"), "Packaging charge", 0, 10000, 0),
+    prep_time_minutes: range(num(f, "prep_time_minutes"), "Preparation time", 5, 240, 30),
+    payment_window_minutes: range(num(f, "payment_window_minutes"), "Payment window", 5, 120, 20),
+    upi_enabled: bool(f, "upi_enabled"),
+    upi_id: optStr(f, "upi_id")?.replace(/\s/g, "").toLowerCase() ?? null,
+    upi_payee_name: optStr(f, "upi_payee_name")?.slice(0, 50) ?? null,
     pickup_instructions: optStr(f, "pickup_instructions"),
     about_story: optStr(f, "about_story"),
     gallery_urls: gallery,
@@ -67,8 +86,20 @@ export const saveSettings = adminAction({ audit: "settings.updated", revalidate:
     updated_by: ctx.userId,
   };
   if (row.pincode && !/^[1-9]\d{5}$/.test(row.pincode)) throw new HttpError(400, "Pincode must be 6 digits.");
-  const supabase = await createClient();
-  check(await supabase.from("restaurant_settings").update(row).eq("id", 1));
+  if (row.upi_id && !/^[a-z0-9._-]{2,128}@[a-z0-9]{2,64}$/.test(row.upi_id)) {
+    throw new HttpError(400, `UPI ID "${row.upi_id}" looks wrong — it should look like name@okaxis or 9876543210@ybl.`);
+  }
+  if (row.upi_enabled && !row.upi_id) throw new HttpError(400, "Enter your UPI ID to turn on UPI payments.");
+  if (lat !== null && (lat < -90 || lat > 90)) throw new HttpError(400, "Latitude must be between -90 and 90.");
+  if (lng !== null && (lng < -180 || lng > 180)) throw new HttpError(400, "Longitude must be between -180 and 180.");
+  // Role was verified server-side by adminAction; write with the service role and
+  // upsert so a missing settings row can never make the save silently do nothing.
+  const { data: saved, error } = await createAdminClient()
+    .from("restaurant_settings")
+    .upsert({ id: 1, ...row }, { onConflict: "id" })
+    .select("id")
+    .single();
+  if (error || !saved) throw new HttpError(500, `Could not save settings: ${error?.message ?? "no row returned"}`);
   return { message: "Settings saved.", entityId: "1", details: { accepting_orders: row.accepting_orders, tax: row.tax_rate_percent } };
 });
 
@@ -207,4 +238,15 @@ export const slotsFromHours = adminAction({ audit: "pickup_slots.generated_from_
   if (!rows.length) throw new HttpError(400, "Opening windows are shorter than one slot.");
   check(await supabase.from("pickup_slots").upsert(rows, { onConflict: "day_of_week,start_time" }));
   return { message: `${rows.length} pickup slots created from your opening hours.` };
+});
+
+
+/** One-click online/offline switch for ordering (dashboard + top banner). */
+export const setAcceptingOrders = adminAction({ roles: ["admin"], audit: "settings.accepting_orders", revalidate: ["/"] }, async (f, ctx) => {
+  const on = str(f, "value") === "true";
+  const { error } = await createAdminClient()
+    .from("restaurant_settings")
+    .upsert({ id: 1, accepting_orders: on, updated_by: ctx.userId }, { onConflict: "id" });
+  if (error) throw new HttpError(500, `Could not update: ${error.message}`);
+  return { message: on ? "Online ordering is now LIVE." : "Online ordering paused.", details: { accepting_orders: on } };
 });

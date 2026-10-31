@@ -29,8 +29,8 @@ const GROUPS: { title: string; required: boolean; keys: { name: string; help: st
     ],
   },
   {
-    title: "Razorpay (required for orders)",
-    required: true,
+    title: "Razorpay (optional — or accept UPI to your own UPI ID, set in Admin → Settings)",
+    required: false,
     keys: [
       { name: "NEXT_PUBLIC_RAZORPAY_KEY_ID", help: "Razorpay → Account & Settings → API Keys (rzp_test_… first)" },
       { name: "RAZORPAY_KEY_SECRET", help: "Shown once when you generate the key" },

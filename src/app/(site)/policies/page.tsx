@@ -25,13 +25,13 @@ export default async function PoliciesPage() {
         <section id="terms" className="scroll-mt-28 space-y-3">
           <h2 className="text-3xl">Terms of ordering</h2>
           <p>All orders are prepaid online. Cash on delivery is not available. Prices are in Indian Rupees and include or exclude taxes as shown at checkout.</p>
-          <p>An order is confirmed only after the payment is verified and the restaurant accepts it. If we cannot accept your order, it is cancelled and refunded in full.</p>
+          <p>An order is confirmed only after the payment is verified and the restaurant accepts it. For UPI payments, we verify the transaction ID you submit against our UPI account before the order is sent to the kitchen. If we cannot accept your order, it is cancelled and refunded in full.</p>
           <p>Delivery is available only to the areas and pincodes listed at checkout. Estimated times are indicative and may vary with traffic and weather.</p>
         </section>
         <section id="privacy" className="scroll-mt-28 space-y-3">
           <h2 className="text-3xl">Privacy</h2>
           <p>We collect your name, contact details and delivery addresses only to process and deliver your orders and to keep you updated about them.</p>
-          <p>Payments are processed by Razorpay. We never see or store your card, UPI PIN or bank credentials.</p>
+          <p>UPI payments go directly to Orange Kitchen&apos;s UPI ID through your own UPI app; we only receive the transaction ID you enter so we can match your payment. Card and net-banking payments are processed by Razorpay. We never see or store your card details, UPI PIN or bank credentials.</p>
           <p>Your delivery address and phone number are shared only with the delivery partner assigned to your order. You can update or delete saved addresses from your account at any time.</p>
           <p>WhatsApp order updates are sent only if you opt in from your account settings.</p>
         </section>

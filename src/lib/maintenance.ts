@@ -44,6 +44,7 @@ export async function reconcileOrder(orderId: string) {
     .from("payments")
     .select("provider_order_id, status")
     .eq("order_id", orderId)
+    .eq("provider", "razorpay")
     .in("status", ["created", "authorized", "failed"]);
   for (const p of pays ?? []) {
     try {
@@ -65,6 +66,7 @@ export async function runMaintenance(opts: { force?: boolean } = {}) {
     const { data: open } = await db
       .from("payments")
       .select("provider_order_id, last_reconciled_at, orders!inner(status)")
+      .eq("provider", "razorpay")
       .in("status", ["created", "authorized", "failed"])
       .in("orders.status", ["pending_payment", "payment_failed", "expired"])
       .gte("created_at", since)
@@ -84,6 +86,7 @@ export async function runMaintenance(opts: { force?: boolean } = {}) {
     const { data: refunds } = await db
       .from("payments")
       .select("id, amount, provider_payment_id, refund_id")
+      .eq("provider", "razorpay")
       .eq("status", "refund_pending")
       .not("refund_id", "is", null)
       .limit(15);

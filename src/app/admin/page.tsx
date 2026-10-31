@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PageHeader, StatCard } from "@/components/admin/PageHeader";
+import { OrderingSwitch } from "@/components/admin/OrderingSwitch";
 import { Badge } from "@/components/ui/Badge";
 import { RealtimeRefresher } from "@/components/orders/RealtimeRefresher";
 import { presetRanges, salesSummary, topItems } from "@/lib/reports";
@@ -27,16 +28,25 @@ export default async function AdminDashboard() {
       supabase.from("pickup_slots").select("id", { count: "exact", head: true }).eq("is_active", true),
       supabase.from("menu_items").select("id", { count: "exact", head: true }).eq("is_published", true),
       supabase.from("menu_items").select("id", { count: "exact", head: true }).eq("is_published", false),
-      supabase.from("restaurant_settings").select("accepting_orders, logo_url, whatsapp, email").eq("id", 1).single(),
+      supabase.from("restaurant_settings").select("accepting_orders, logo_url, whatsapp, email, upi_enabled, upi_id, delivery_enabled, takeaway_enabled").eq("id", 1).maybeSingle(),
+      supabase.from("payments").select("id", { count: "exact", head: true }).eq("status", "verification_pending"),
     ]),
     getRoles(),
   ]);
-  const [hours, areas, slots, published, drafts, settings] = setup;
+  const [hours, areas, slots, published, drafts, settings, upiToVerify] = setup;
+  const upiReady = Boolean(settings.data?.upi_enabled && settings.data?.upi_id);
+  const live = Boolean(settings.data?.accepting_orders);
+  // Things that would stop a customer from completing an order right now.
+  const blockers = [
+    !(upiReady || integrationStatus().razorpay) && { label: "Add a payment method — your UPI ID (Settings) or Razorpay keys", href: "/admin/settings" },
+    (published.count ?? 0) === 0 && { label: "Publish at least one dish with a price", href: "/admin/menu" },
+    settings.data?.delivery_enabled !== false && (areas.count ?? 0) === 0 && { label: "Add delivery pincodes (or turn off delivery)", href: "/admin/delivery-areas" },
+    settings.data?.takeaway_enabled !== false && (slots.count ?? 0) === 0 && { label: "Create pickup slots (or turn off takeaway)", href: "/admin/pickup-slots" },
+  ].filter(Boolean) as { label: string; href: string }[];
   const integ = integrationStatus();
   const checklist = [
     { ok: integ.supabase, label: "Supabase service key configured" },
-    { ok: integ.razorpay, label: `Razorpay keys configured (${integ.razorpayMode} mode)` },
-    { ok: integ.razorpayWebhook, label: "Razorpay webhook (optional — payments are also auto-reconciled)" },
+    { ok: upiReady || integ.razorpay, label: upiReady ? "Payments: UPI to your UPI ID" : integ.razorpay ? `Payments: Razorpay (${integ.razorpayMode} mode)` : "Payment method (UPI ID or Razorpay)", href: "/admin/settings" },
     { ok: (published.count ?? 0) > 0, label: `Menu published (${published.count ?? 0} dishes live, ${drafts.count ?? 0} drafts need prices)`, href: "/admin/menu" },
     
     { ok: (hours.count ?? 0) > 0, label: "Opening hours set", href: "/admin/hours" },
@@ -53,8 +63,31 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <RealtimeRefresher tables="orders" />
+      <RealtimeRefresher tables="orders,payments" />
       <PageHeader title="Dashboard" description="Live overview of Orange Kitchen orders and sales (IST)." actions={<Link href="/admin/orders?status=payment_confirmed" className="btn-primary">New orders</Link>} />
+
+      {(upiToVerify.count ?? 0) > 0 && (
+        <Link href="/admin/orders?payment=verification_pending" className="card flex items-center justify-between gap-4 border-2 border-brand-400 bg-brand-50 p-5">
+          <span className="font-bold text-brand-800">{upiToVerify.count} UPI payment{upiToVerify.count === 1 ? "" : "s"} waiting for you to verify</span>
+          <span className="btn-primary btn-sm">Verify now</span>
+        </Link>
+      )}
+
+      <section className={`card flex flex-wrap items-center justify-between gap-4 border-2 p-5 ${live ? "border-leaf/40 bg-leaf-50" : "border-amber-300 bg-amber-50"}`}>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-charcoal-500">Online ordering</p>
+          <p className={`mt-1 font-display text-3xl font-semibold ${live ? "text-leaf" : "text-amber-800"}`}>{live ? "● ONLINE" : "○ OFFLINE"}</p>
+          {blockers.length > 0 && (
+            <ul className="mt-2 space-y-1 text-sm text-amber-900">
+              {blockers.map((b) => (
+                <li key={b.label}>⚠ <Link href={b.href} className="underline">{b.label}</Link></li>
+              ))}
+            </ul>
+          )}
+          {live && blockers.length > 0 && <p className="mt-1 text-xs text-amber-900">Customers can’t complete orders until these are fixed.</p>}
+        </div>
+        {roles.includes("admin") && <OrderingSwitch on={live} />}
+      </section>
 
       {pendingSetup.length > 0 && roles.includes("admin") && (
         <section className="card border-amber-200 bg-amber-50/60 p-5">

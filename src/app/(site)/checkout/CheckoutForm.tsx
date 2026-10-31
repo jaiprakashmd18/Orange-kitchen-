@@ -29,10 +29,12 @@ export interface CheckoutProps {
   profile: { full_name: string | null; phone: string | null };
   restaurant: { name: string; logo_url: string | null; address: string; maps: string; delivery_enabled: boolean; takeaway_enabled: boolean };
   emailVerified: boolean;
-  paymentsReady: boolean;
+  paymentMethods: ("upi" | "razorpay")[];
 }
 
-export function CheckoutForm({ addresses: initialAddresses, profile, restaurant, emailVerified, paymentsReady }: CheckoutProps) {
+export function CheckoutForm({ addresses: initialAddresses, profile, restaurant, emailVerified, paymentMethods }: CheckoutProps) {
+  const paymentsReady = paymentMethods.length > 0;
+  const [paymentMethod, setPaymentMethod] = useState<"upi" | "razorpay">(paymentMethods[0] ?? "razorpay");
   const router = useRouter();
   const cart = useCart();
   const [fulfillment, setFulfillment] = useState<"delivery" | "takeaway">(restaurant.delivery_enabled ? "delivery" : "takeaway");
@@ -68,7 +70,7 @@ export function CheckoutForm({ addresses: initialAddresses, profile, restaurant,
 
   // A fresh idempotency key for each distinct order payload: retries of the
   // same payload reuse it (no duplicate orders); a changed cart gets a new one.
-  const payloadKey = JSON.stringify([cart.lines.map((l) => [l.key, l.quantity]), fulfillment, addressId, slot?.slot_id, slot?.date, cart.coupon_code, cart.special_instructions]);
+  const payloadKey = JSON.stringify([cart.lines.map((l) => [l.key, l.quantity]), fulfillment, addressId, slot?.slot_id, slot?.date, cart.coupon_code, cart.special_instructions, paymentMethod]);
   const idempotencyKey = useMemo(() => crypto.randomUUID().replace(/-/g, ""), [payloadKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!cart.ready) return <PageLoader label="Preparing checkout…" />;
@@ -103,10 +105,17 @@ export function CheckoutForm({ addresses: initialAddresses, profile, restaurant,
           coupon_code: cart.coupon_code || undefined,
           special_instructions: cart.special_instructions || undefined,
           idempotency_key: idempotencyKey,
+          payment_method: paymentMethod,
         }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Could not place your order.");
+      if (body.method === "upi") {
+        // Pay to the restaurant's UPI ID on the next page, then submit the UTR.
+        cart.clear();
+        router.push(body.pay_url);
+        return;
+      }
       const session = body as PaymentSession;
       const outcome = await openCheckout(session, { name: restaurant.name, logo: restaurant.logo_url });
       if (outcome === "paid" || outcome === "pending") {
@@ -251,12 +260,37 @@ export function CheckoutForm({ addresses: initialAddresses, profile, restaurant,
           )}
           {error && <p className="mt-4 rounded-xl bg-chilli-50 px-3 py-2 text-sm text-chilli" role="alert">{error}</p>}
 
+          {paymentMethods.length > 0 && (
+            <fieldset className="mt-5">
+              <legend className="mb-2 text-sm font-bold">Pay with</legend>
+              <div className="space-y-2">
+                {paymentMethods.includes("upi") && (
+                  <label className={clsx("flex cursor-pointer items-start gap-3 rounded-xl border-2 p-3 text-sm", paymentMethod === "upi" ? "border-brand-500 bg-brand-50" : "border-charcoal/10")}>
+                    <input type="radio" name="pm" className="mt-1 accent-brand-600" checked={paymentMethod === "upi"} onChange={() => setPaymentMethod("upi")} />
+                    <span>
+                      <span className="font-bold">UPI — GPay, PhonePe, Paytm</span>
+                      <span className="block text-xs text-charcoal-500">Pay directly to Orange Kitchen&apos;s UPI ID, then enter the transaction ID.</span>
+                    </span>
+                  </label>
+                )}
+                {paymentMethods.includes("razorpay") && (
+                  <label className={clsx("flex cursor-pointer items-start gap-3 rounded-xl border-2 p-3 text-sm", paymentMethod === "razorpay" ? "border-brand-500 bg-brand-50" : "border-charcoal/10")}>
+                    <input type="radio" name="pm" className="mt-1 accent-brand-600" checked={paymentMethod === "razorpay"} onChange={() => setPaymentMethod("razorpay")} />
+                    <span>
+                      <span className="font-bold">Cards, UPI &amp; net banking</span>
+                      <span className="block text-xs text-charcoal-500">Secure checkout by Razorpay — confirmed instantly.</span>
+                    </span>
+                  </label>
+                )}
+              </div>
+            </fieldset>
+          )}
           <button type="button" className="btn-primary mt-5 w-full py-3 text-base" disabled={!canPay} onClick={pay}>
             {submitting ? <Spinner /> : <Icon name="check" className="h-4 w-4" />}
             {data ? `Pay ${formatINR(data.quote.total_amount)}` : "Pay"}
           </button>
           <p className="mt-3 text-center text-xs text-charcoal-500">
-            Secure payment by Razorpay · UPI, cards, net banking. Cash on delivery is not available.
+            Online payment only · Cash on delivery is not available.
           </p>
           <p className="mt-1 text-center text-xs text-charcoal-500">
             See our <Link href="/policies#cancellation" className="underline">cancellation &amp; refund policy</Link>.

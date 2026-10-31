@@ -12,6 +12,7 @@ import type { Order, OrderStatus } from "@/lib/types";
 
 const NOTIFY_ON: OrderStatus[] = [
   "payment_confirmed",
+  "payment_failed",
   "accepted",
   "preparing",
   "ready",

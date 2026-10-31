@@ -4,7 +4,6 @@ import { placeOrder } from "@/lib/orders";
 import { checkoutSchema } from "@/lib/validation";
 import { handleRouteError } from "@/lib/http";
 import { rateLimit } from "@/lib/rate-limit";
-import { integrationStatus } from "@/lib/env";
 
 /** Creates an order (pending payment) and its Razorpay order. */
 export async function POST(req: NextRequest) {
@@ -13,7 +12,6 @@ export async function POST(req: NextRequest) {
     if (!user.email_confirmed_at && !user.phone_confirmed_at) {
       throw new HttpError(403, "Please verify your email address before placing an order.", "UNVERIFIED");
     }
-    if (!integrationStatus().razorpay) throw new HttpError(503, "Online payments are not configured yet. Please call us to order.", "PAYMENTS_OFF");
     await rateLimit(`order:${user.id}`, 10, 600);
     const body = checkoutSchema.parse(await req.json());
     if (!body.idempotency_key) throw new HttpError(400, "Missing idempotency key.");
@@ -28,6 +26,7 @@ export async function POST(req: NextRequest) {
       coupon_code: body.coupon_code,
       special_instructions: body.special_instructions,
       idempotency_key: body.idempotency_key,
+      payment_method: body.payment_method,
     });
     return NextResponse.json(session, { status: 201 });
   } catch (err) {

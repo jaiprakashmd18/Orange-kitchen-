@@ -7,6 +7,8 @@ import { refundOrder, transitionOrder } from "@/lib/orders";
 import { adapterFor, providerStatus, trackingUrlFor } from "@/lib/delivery/providers";
 import { getSettings, fullAddress } from "@/lib/data";
 import { HttpError } from "@/lib/auth";
+import { after } from "next/server";
+import { dispatchOrderNotifications } from "@/lib/notifications/dispatch";
 import type { DeliveryProvider, Order, OrderStatus } from "@/lib/types";
 
 const STAFF = { roles: ["admin", "staff"] as ("admin" | "staff")[] };
@@ -104,4 +106,46 @@ export const retryRefund = adminAction({ roles: ["admin"], audit: "order.refund_
   const orderId = z.string().uuid().parse(str(f, "order_id"));
   const refund = await refundOrder(orderId, ctx.userId);
   return { message: refund ? `Refund ${refund.id} ${refund.status}.` : "No captured payment to refund.", entityId: orderId };
+});
+
+/**
+ * Staff confirm or reject a direct-UPI payment after checking their UPI app
+ * (GPay Business / bank app) for the amount and transaction ID.
+ */
+export const verifyUpiPayment = adminAction({ ...STAFF, audit: "payment.upi_verified", revalidate: ["/admin/orders", "/admin"] }, async (f, ctx) => {
+  const orderId = z.string().uuid().parse(str(f, "order_id"));
+  const decision = z.enum(["received", "not_received"]).parse(str(f, "decision"));
+  const db = createAdminClient();
+  const { data: p } = await db.from("payments").select("provider_order_id, provider_payment_id, amount, status").eq("order_id", orderId).eq("provider", "upi").maybeSingle();
+  if (!p) throw new HttpError(404, "No UPI payment on this order.");
+  if (p.status !== "verification_pending") throw new HttpError(409, "This payment is not waiting for verification.");
+
+  if (decision === "received") {
+    const { error } = await db.rpc("confirm_payment", {
+      p_provider_order_id: p.provider_order_id,
+      p_provider_payment_id: p.provider_payment_id,
+      p_amount: Number(p.amount),
+      p_method: "upi",
+      p_via: "manual",
+    });
+    if (error) throw new HttpError(500, error.message);
+    after(() => dispatchOrderNotifications(orderId, "payment_confirmed"));
+    return { message: "Payment confirmed — order sent to the kitchen queue.", entityId: orderId, details: { utr: p.provider_payment_id, by: ctx.userId } };
+  }
+  const reason = optStr(f, "reason")?.slice(0, 200) ?? "We could not find this payment in our UPI account.";
+  const { error } = await db.rpc("record_payment_failure", { p_provider_order_id: p.provider_order_id, p_provider_payment_id: null, p_reason: reason });
+  if (error) throw new HttpError(500, error.message);
+  after(() => dispatchOrderNotifications(orderId, "payment_failed"));
+  return { message: "Marked as not received. The customer can submit the correct transaction ID.", entityId: orderId, details: { utr: p.provider_payment_id, reason } };
+});
+
+/** UPI refunds are sent from the restaurant's UPI app, then recorded here. */
+export const markUpiRefunded = adminAction({ roles: ["admin"], audit: "payment.upi_refunded", revalidate: ["/admin/orders"] }, async (f) => {
+  const orderId = z.string().uuid().parse(str(f, "order_id"));
+  const ref = optStr(f, "refund_ref")?.slice(0, 40) ?? null;
+  const db = createAdminClient();
+  const { data: p } = await db.from("payments").select("id, amount, status").eq("order_id", orderId).eq("provider", "upi").maybeSingle();
+  if (!p || p.status !== "refund_pending") throw new HttpError(409, "No pending UPI refund on this order.");
+  check(await db.from("payments").update({ status: "refunded", refunded_amount: p.amount, refunded_at: new Date().toISOString(), refund_id: ref, failure_reason: null }).eq("id", p.id));
+  return { message: "Refund recorded.", entityId: orderId, details: { refund_ref: ref } };
 });

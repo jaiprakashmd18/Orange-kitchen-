@@ -8,6 +8,7 @@ import { computeQuote, priceLines, PricingError, toPaise, type CartLineInput, ty
 import { isOpenAt, itemAvailableAt, upcomingPickupOptions, type PickupOption } from "@/lib/schedule";
 import { istDateTime } from "@/lib/format";
 import { createRazorpayOrder, refundPayment } from "@/lib/razorpay";
+import { availablePaymentMethods } from "@/lib/payment-methods";
 import { dispatchOrderNotifications } from "@/lib/notifications/dispatch";
 import type {
   Address,
@@ -19,6 +20,7 @@ import type {
   Order,
   OrderStatus,
   Payment,
+  PaymentMethod,
   PickupSlot,
   RestaurantSettings,
   ServiceableArea,
@@ -193,19 +195,27 @@ export interface PlaceOrderInput {
   coupon_code?: string | null;
   special_instructions?: string | null;
   idempotency_key: string;
+  payment_method: PaymentMethod;
 }
 
-export interface PaymentSession {
-  order_id: string;
-  order_number: string;
-  razorpay_order_id: string;
-  amount_paise: number;
-  key_id: string;
-  prefill: { name: string; email: string; contact: string };
-}
+export type PaymentSession =
+  | {
+      method: "razorpay";
+      order_id: string;
+      order_number: string;
+      razorpay_order_id: string;
+      amount_paise: number;
+      key_id: string;
+      prefill: { name: string; email: string; contact: string };
+    }
+  | { method: "upi"; order_id: string; order_number: string; pay_url: string };
 
 async function sessionFor(order: Order, payment: Payment): Promise<PaymentSession> {
+  if (payment.provider === "upi") {
+    return { method: "upi", order_id: order.id, order_number: order.order_number, pay_url: `/orders/${order.id}/pay` };
+  }
   return {
+    method: "razorpay",
     order_id: order.id,
     order_number: order.order_number,
     razorpay_order_id: payment.provider_order_id,
@@ -246,6 +256,9 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PaymentSession
   if (result.blockers.length) throw new HttpError(422, result.blockers[0], "NOT_ORDERABLE");
 
   const { quote, settings, area, pickup } = result;
+  if (!availablePaymentMethods(settings).includes(input.payment_method)) {
+    throw new HttpError(422, "That payment method is not available right now. Please choose another.", "PAYMENT_METHOD_UNAVAILABLE");
+  }
   const name = address?.full_name ?? profile?.full_name ?? "";
   const phone = address?.phone ?? profile?.phone ?? "";
   if (!name || !phone) {
@@ -309,6 +322,18 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PaymentSession
     throw error;
   }
   const created = order as Order;
+
+  if (input.payment_method === "upi") {
+    // Direct UPI to the restaurant's UPI ID: verified by staff after the
+    // customer submits the transaction reference (UTR).
+    const { data: payment, error: payErr } = await db()
+      .from("payments")
+      .insert({ order_id: created.id, provider: "upi", provider_order_id: `upi_${created.id}`, amount: created.total_amount, currency: "INR", method: "upi" })
+      .select("*")
+      .single();
+    if (payErr) throw payErr;
+    return sessionFor(created, payment as Payment);
+  }
 
   try {
     const rzp = await createRazorpayOrder({
@@ -401,6 +426,13 @@ export async function refundOrder(orderId: string, actorId: string | null) {
   const { data: payment } = await db().from("payments").select("*").eq("order_id", orderId).eq("status", "captured").maybeSingle();
   if (!payment) return null; // nothing captured (already refunded or never paid)
   const p = payment as Payment;
+  if (p.provider === "upi") {
+    // Money is in the restaurant's own UPI account: refund is sent manually
+    // from the UPI app, then marked done in Admin → order → "Mark refunded".
+    await db().from("payments").update({ status: "refund_pending", failure_reason: "Send the refund from your UPI app, then mark it refunded." }).eq("id", p.id);
+    await db().from("audit_logs").insert({ actor_id: actorId, action: "payment.refund_due_manual_upi", entity: "order", entity_id: orderId, details: { amount: p.amount, utr: p.provider_payment_id } });
+    return { id: "manual-upi", status: "pending" as const };
+  }
   const refund = await refundPayment(
     p.provider_payment_id!,
     toPaise(p.amount),

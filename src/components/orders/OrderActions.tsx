@@ -22,6 +22,7 @@ export function RetryPaymentButton({ orderId, restaurantName, logo }: { orderId:
             const res = await fetch(`/api/orders/${orderId}/pay`, { method: "POST" });
             const body = await res.json();
             if (!res.ok) throw new Error(body.error ?? "Could not start payment.");
+            if (body.method === "upi") return router.push(body.pay_url);
             await openCheckout(body as PaymentSession, { name: restaurantName, logo });
             router.refresh();
           } catch (e) {

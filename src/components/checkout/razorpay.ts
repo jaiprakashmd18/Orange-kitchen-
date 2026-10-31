@@ -3,6 +3,7 @@
 // Loads Razorpay Checkout and opens it for a server-created order.
 
 export interface PaymentSession {
+  method?: "razorpay";
   order_id: string;
   order_number: string;
   razorpay_order_id: string;

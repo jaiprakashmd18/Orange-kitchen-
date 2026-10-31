@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { getSettings } from "@/lib/data";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { OrderingSwitch } from "@/components/admin/OrderingSwitch";
 import { after } from "next/server";
 import { runMaintenance } from "@/lib/maintenance";
 
@@ -34,8 +35,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
       <div className="min-w-0">
         {!settings.accepting_orders && (
-          <div className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-900">
-            Online ordering is <strong>paused</strong>. {roles.includes("admin") && <Link href="/admin/settings" className="underline">Turn it on in Settings</Link>}
+          <div className="flex flex-wrap items-center justify-center gap-3 bg-amber-100 px-4 py-2 text-center text-sm text-amber-900">
+            <span>Online ordering is <strong>OFF</strong> — customers can browse but not order.</span>
+            {roles.includes("admin") && <OrderingSwitch on={false} compact />}
           </div>
         )}
         <main id="main" className="p-4 sm:p-6 lg:p-8">{children}</main>

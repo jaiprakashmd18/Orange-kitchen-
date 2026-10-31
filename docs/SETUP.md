@@ -16,7 +16,19 @@ On every build, `scripts/setup.mjs` runs before `next build`. It:
 > Shortcut: in Vercel, add the official **Supabase integration** to the project. It fills in the URL, both keys and
 > `POSTGRES_URL` for you. You then only add `SUPABASE_ACCESS_TOKEN`, the admin and the Razorpay keys.
 
-## Step 2 — Razorpay (≈5 min)
+## Step 2 — Payments
+
+### Option A — UPI straight to your UPI ID (GPay, PhonePe, Paytm). No keys needed.
+1. Admin → **Settings** → *UPI payments* → tick **Accept UPI payments**, enter your UPI ID (e.g. `orangekitchen@okaxis`) and the name to show → **Save**.
+2. Customers choose **UPI** at checkout. They pay by scanning the QR code or tapping **Pay with Google Pay**, then enter the 12-digit **UPI transaction ID**.
+3. You get a **"UPI payments waiting for you to verify"** alert on the dashboard. Open the order, check your GPay/bank app for that amount and transaction ID, and click **Payment received** (or **Not received**). Only then does the order go to the kitchen.
+4. Refunds for UPI orders are sent from your UPI app, then recorded with **Mark refunded** on the order.
+
+> Use a **GPay for Business / merchant UPI ID** if you can. Personal UPI IDs can hit daily collection limits, and some apps warn
+> customers when they pay a personal ID. UPI has no public API to confirm payments to a plain UPI ID, so this check is done
+> by a person. Choose Option B if you want fully automatic confirmation.
+
+### Option B — Razorpay (automatic confirmation; cards, UPI incl. GPay, net banking) (≈5 min)
 1. [dashboard.razorpay.com](https://dashboard.razorpay.com) → switch to **Test mode** → **Account & Settings → API Keys** → Generate.
 2. Copy the Key ID (`rzp_test_…`) and the Key Secret.
 3. *(Optional, recommended)* **Webhooks → Add**: URL `https://<your-site>/api/webhooks/razorpay`, choose a secret, and tick

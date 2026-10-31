@@ -121,11 +121,28 @@ export default async function SettingsPage() {
           <Area name="refund_policy" label="Refund policy" defaultValue={s.refund_policy} rows={4} />
         </section>
 
+        <section className="card grid gap-4 border-2 border-brand-200 p-5 xl:col-span-2">
+          <div>
+            <h2 className="font-sans font-bold">UPI payments — GPay, PhonePe, Paytm (direct to your UPI ID)</h2>
+            <p className="mt-1 text-sm text-charcoal-500">
+              Customers pay straight to your UPI ID using a QR code or the GPay/UPI button, then enter their 12-digit transaction ID. You confirm it in
+              <strong> Admin → Orders → “UPI to verify”</strong> after checking your UPI app. No gateway fees. Tip: use a GPay for Business / merchant UPI ID —
+              personal IDs can hit daily limits.
+            </p>
+          </div>
+          <Check name="upi_enabled" label="Accept UPI payments to my UPI ID" defaultChecked={s.upi_enabled} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field name="upi_id" label="Your UPI ID" defaultValue={s.upi_id} placeholder="orangekitchen@okaxis" />
+            <Field name="upi_payee_name" label="Name shown in the UPI app" defaultValue={s.upi_payee_name} placeholder="Orange Kitchen" />
+          </div>
+        </section>
+
         <section className="card p-5 xl:col-span-2">
           <h2 className="font-sans font-bold">Payment &amp; integrations</h2>
           <p className="mt-1 text-sm text-charcoal-500">Secrets are configured as environment variables on the server (never stored in the database). Current status:</p>
           <ul className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
-            <li>{integ.razorpay ? "✓" : "✗"} Razorpay API keys — <strong>{integ.razorpayMode.toUpperCase()} mode</strong></li>
+            <li>{s.upi_enabled && s.upi_id ? "✓" : "✗"} Direct UPI {s.upi_enabled && s.upi_id ? `— ${s.upi_id}` : "(set above)"}</li>
+            <li>{integ.razorpay ? "✓" : "✗"} Razorpay (cards / netbanking, optional) {integ.razorpay && <>— <strong>{integ.razorpayMode.toUpperCase()} mode</strong></>}</li>
             <li>{integ.razorpayWebhook ? "✓" : "✗"} Razorpay webhook secret</li>
             <li>{integ.email ? "✓" : "✗"} Email notifications (Resend)</li>
             <li>{integ.whatsapp ? "✓" : "✗"} WhatsApp Cloud API</li>

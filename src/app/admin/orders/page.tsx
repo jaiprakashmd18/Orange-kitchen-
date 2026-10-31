@@ -44,7 +44,7 @@ export default async function AdminOrders({ searchParams }: { searchParams: Prom
 
   return (
     <div>
-      <RealtimeRefresher tables="orders" />
+      <RealtimeRefresher tables="orders,payments" />
       <PageHeader title="Orders" description={`${count ?? 0} orders match`} />
       <form className="card mb-6 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6" method="get">
         <input name="q" defaultValue={sp.q} placeholder="Order no, name, phone" className="input lg:col-span-2" aria-label="Search" />
@@ -60,7 +60,7 @@ export default async function AdminOrders({ searchParams }: { searchParams: Prom
         </select>
         <select name="payment" defaultValue={sp.payment ?? ""} className="input" aria-label="Payment status">
           <option value="">Any payment</option>
-          {["created", "captured", "failed", "refund_pending", "refunded"].map((p) => <option key={p} value={p}>{p.replace("_", " ")}</option>)}
+          {["created", "verification_pending", "captured", "failed", "refund_pending", "refunded"].map((p) => <option key={p} value={p}>{p.replace("_", " ")}</option>)}
         </select>
         <div className="flex gap-2">
           <input type="date" name="from" defaultValue={sp.from} className="input" aria-label="From date" />
@@ -69,6 +69,7 @@ export default async function AdminOrders({ searchParams }: { searchParams: Prom
         <div className="flex gap-2 lg:col-span-6">
           <button className="btn-primary btn-sm">Filter</button>
           <Link href="/admin/orders" className="btn-ghost btn-sm">Reset</Link>
+          <Link href="/admin/orders?payment=verification_pending" className="btn-secondary btn-sm">UPI to verify</Link>
           <Link href="/admin/orders?status=payment_confirmed" className="btn-secondary btn-sm">Awaiting acceptance</Link>
           <Link href="/admin/orders?status=active" className="btn-secondary btn-sm">In progress</Link>
         </div>

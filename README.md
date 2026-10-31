@@ -49,7 +49,8 @@ Local: `npm install && cp .env.example .env.local && npm run setup && npm run de
 | Feature | Status |
 |---|---|
 | Website, menu, cart, checkout, accounts, admin, rider app, reports, PWA, SEO | Implemented |
-| Razorpay payments, refunds | Implemented — needs your keys (use test mode first). Webhook optional: payments and refunds are auto-reconciled with Razorpay |
+| UPI to your own UPI ID (GPay / PhonePe / Paytm) | Implemented — turn on in Admin → Settings → UPI payments. Customer pays via QR / GPay button and submits the 12-digit transaction ID; staff confirm it in Admin → Orders → "UPI to verify". No gateway fees, but **not automatic** (no bank API to confirm it) |
+| Razorpay (cards, UPI, net banking), refunds | Optional — automatic confirmation; needs your keys (test mode first). Webhook optional: payments and refunds are auto-reconciled |
 | Database, admin account, Auth config | Automatic on deploy from env vars |
 | Menu bulk import / export | Admin → Dishes → Import CSV |
 | Email notifications | Implemented — **not active until `RESEND_API_KEY` and `EMAIL_FROM` are set** |

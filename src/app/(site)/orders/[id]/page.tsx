@@ -25,6 +25,7 @@ const PAYMENT_LABEL: Record<string, string> = {
   captured: "Paid",
   failed: "Failed",
   refund_pending: "Refund initiated",
+  verification_pending: "Being verified by the restaurant",
   refunded: "Refunded",
   partially_refunded: "Partially refunded",
 };
@@ -49,7 +50,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   return (
     <div className="container-page py-10 sm:py-14">
       <RealtimeRefresher orderId={order.id} />
-      {isOwner && order.status === "pending_payment" && <PendingPaymentPoller />}
+      {isOwner && order.status === "pending_payment" && <PendingPaymentPoller everyMs={payment?.provider === "upi" ? 10000 : 6000} maxMs={payment?.provider === "upi" ? 30 * 60_000 : 180000} />}
       {sp.placed && order.status === "pending_payment" && (
         <div className="mb-6 rounded-2xl bg-brand-50 px-5 py-4 text-sm text-brand-800" role="status">
           We&apos;re confirming your payment with the bank. This page will update automatically.
@@ -93,11 +94,24 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
               </div>
             ) : (
               <>
-                {(order.status === "payment_failed" || unpaid) && (
+                {payment?.status === "verification_pending" ? (
+                  <div className="mt-4 rounded-2xl bg-brand-50 p-4 text-sm text-brand-800">
+                    <p className="font-semibold">UPI payment submitted — waiting for the restaurant to verify it.</p>
+                    <p className="mt-1">Transaction ID <span className="font-mono">{payment.provider_payment_id}</span>. This page updates automatically.</p>
+                  </div>
+                ) : (order.status === "payment_failed" || unpaid) && (
                   <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
-                    <p className="font-semibold">{order.status === "payment_failed" ? "Your last payment attempt failed." : "Waiting for payment."}</p>
+                    <p className="font-semibold">{order.status === "payment_failed" ? (payment?.failure_reason ?? "Your last payment attempt failed.") : "Waiting for payment."}</p>
                     <p className="mt-1">The kitchen will start once payment is confirmed. Complete payment before {formatTime(order.payment_due_at)}.</p>
-                    {isOwner && unpaid && <div className="mt-3"><RetryPaymentButton orderId={order.id} restaurantName={settings.name} logo={settings.logo_url} /></div>}
+                    {isOwner && (unpaid || order.status === "payment_failed") && (
+                      <div className="mt-3">
+                        {payment?.provider === "upi" ? (
+                          <Link href={`/orders/${order.id}/pay`} className="btn-primary">Pay by UPI</Link>
+                        ) : (
+                          <RetryPaymentButton orderId={order.id} restaurantName={settings.name} logo={settings.logo_url} />
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
                 <div className="mt-6">

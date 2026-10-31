@@ -24,7 +24,9 @@ export type PaymentStatus =
   | "failed"
   | "refund_pending"
   | "refunded"
-  | "partially_refunded";
+  | "partially_refunded"
+  | "verification_pending";
+export type PaymentMethod = "razorpay" | "upi";
 export type DeliveryMode = "own" | "third_party";
 
 export interface OptionChoice {
@@ -114,6 +116,9 @@ export interface RestaurantSettings {
   packaging_charge: number;
   prep_time_minutes: number;
   payment_window_minutes: number;
+  upi_enabled: boolean;
+  upi_id: string | null;
+  upi_payee_name: string | null;
   pickup_instructions: string | null;
   about_story: string | null;
   gallery_urls: string[];
@@ -249,6 +254,8 @@ export interface Order {
 export interface Payment {
   id: string;
   order_id: string;
+  provider: "razorpay" | "upi";
+  submitted_at: string | null;
   provider_order_id: string;
   provider_payment_id: string | null;
   amount: number;

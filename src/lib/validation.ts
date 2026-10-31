@@ -47,6 +47,7 @@ export const checkoutSchema = z
     coupon_code: trimmed(30).optional().nullable(),
     special_instructions: trimmed(500).optional().nullable(),
     idempotency_key: z.string().min(16).max(80).regex(/^[A-Za-z0-9_-]+$/).optional(),
+    payment_method: z.enum(["razorpay", "upi"]).default("razorpay"),
   })
   .superRefine((v, ctx) => {
     if (v.fulfillment === "delivery" && !v.address_id)
