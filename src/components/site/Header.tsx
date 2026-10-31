@@ -45,7 +45,6 @@ export function Header({
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   const staffLinks = [
-    ...(roles.includes("admin") || roles.includes("staff") ? [{ href: "/admin", label: "Admin" }] : []),
     ...(roles.includes("delivery") ? [{ href: "/delivery", label: "Deliveries" }] : []),
   ];
 
