@@ -100,8 +100,15 @@ export default async function IntegrationsPage() {
         status={<Status on={st.supabaseToken} />}
         help={
           <>
-            Makes sign-up and password-reset links open <strong>this website</strong>, and sends those emails from your Gmail. Create a token at{" "}
-            <a href="https://supabase.com/dashboard/account/tokens" target="_blank" rel="noopener noreferrer" className="link">supabase.com/dashboard/account/tokens</a> → “Generate new token”, then paste it.
+            Makes sign-up and password-reset links open <strong>this website</strong>, and sends those emails from your Gmail.
+            <ol className="mt-2 list-decimal space-y-1 pl-5">
+              <li>Open <a href="https://supabase.com/dashboard/account/tokens" target="_blank" rel="noopener noreferrer" className="link">supabase.com/dashboard/account/tokens</a> → <strong>Generate new token</strong>.</li>
+              <li>Name: <em>Orange Kitchen</em>. Expires in: <strong>30 days</strong> is enough (only needed while setting up).</li>
+              <li>Resource access: <strong>Project</strong> → pick your organisation and <strong>your project</strong>.</li>
+              <li>Permissions: <strong>Project</strong> → Read · <strong>Database</strong> → Read &amp; Write · <strong>Application services → Auth</strong> → Read &amp; Write. Leave the rest as No access.</li>
+              <li>Generate → copy the token → paste it below.</li>
+            </ol>
+            <p className="mt-1">Can&apos;t find those options? Use <em>“Create legacy token”</em> on the same page instead. It works too, but has wider access.</p>
           </>
         }
       >

@@ -22,7 +22,14 @@ export async function requestOrigin() {
   return `${proto}://${host}`;
 }
 
-async function api(token: string, pathname: string, init: RequestInit = {}) {
+// What each call needs, so a scoped token with missing permissions gets a clear message.
+const NEEDS: Record<string, string> = {
+  project: "Project → read access",
+  sql: "Database → read & write (SQL) access",
+  auth: "Application services → Auth → read & write access",
+};
+
+async function api(token: string, pathname: string, init: RequestInit = {}, needs?: keyof typeof NEEDS) {
   const res = await fetch(`${API}${pathname}`, {
     ...init,
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init.headers ?? {}) },
@@ -30,6 +37,8 @@ async function api(token: string, pathname: string, init: RequestInit = {}) {
     signal: AbortSignal.timeout(60_000),
   });
   const text = await res.text();
+  if (res.status === 401) throw new Error("Supabase says this token is invalid or expired. Create a new token and paste it again.");
+  if (res.status === 403 && needs) throw new Error(`This token doesn't have permission for: ${NEEDS[needs]}. Edit the token's permissions (or create a new one) and try again.`);
   if (!res.ok) {
     let msg = text.slice(0, 300);
     try {
@@ -48,13 +57,15 @@ async function api(token: string, pathname: string, init: RequestInit = {}) {
 export async function verifyToken(token: string) {
   const ref = projectRef();
   if (!ref) throw new Error("NEXT_PUBLIC_SUPABASE_URL is not a supabase.co project URL.");
-  if (!/^sbp_[A-Za-z0-9]{20,}$/.test(token.trim())) throw new Error("That doesn't look like a Supabase access token (it starts with sbp_).");
-  await api(token.trim(), `/projects/${ref}`);
+  const t = token.trim();
+  if (t.length < 20 || /\s/.test(t)) throw new Error("That doesn't look like a Supabase access token. Copy the whole token shown after you click Generate.");
+  if (t.startsWith("eyJ")) throw new Error("That's a project API key, not an access token. Create one at supabase.com/dashboard/account/tokens.");
+  await api(t, `/projects/${ref}`, {}, "project");
   return ref;
 }
 
 export async function runSql(token: string, query: string) {
-  return api(token, `/projects/${projectRef()}/database/query`, { method: "POST", body: JSON.stringify({ query }) }) as Promise<Record<string, unknown>[] | null>;
+  return api(token, `/projects/${projectRef()}/database/query`, { method: "POST", body: JSON.stringify({ query }) }, "sql") as Promise<Record<string, unknown>[] | null>;
 }
 
 const lit = (v: string) => `'${v.replace(/'/g, "''")}'`;
@@ -115,6 +126,6 @@ export async function configureAuth(token: string, siteUrl: string, smtp?: SmtpS
       rate_limit_email_sent: 100,
     });
   }
-  await api(token, `/projects/${projectRef()}/config/auth`, { method: "PATCH", body: JSON.stringify(body) });
+  await api(token, `/projects/${projectRef()}/config/auth`, { method: "PATCH", body: JSON.stringify(body) }, "auth");
   return allow;
 }

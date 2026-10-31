@@ -66,7 +66,9 @@ export default async function SetupPage() {
               <p>
                 Get a Supabase access token: open{" "}
                 <a className="link" href="https://supabase.com/dashboard/account/tokens" target="_blank" rel="noopener noreferrer">supabase.com/dashboard/account/tokens</a>{" "}
-                → <strong>Generate new token</strong> → name it “Orange Kitchen” → copy it. This proves you own the project; we use it to create your database and set up login emails.
+                → <strong>Generate new token</strong>. Choose <strong>Project</strong> access → your project, and give it these permissions:{" "}
+                <strong>Project: Read</strong>, <strong>Database: Read &amp; Write</strong>, <strong>Application services → Auth: Read &amp; Write</strong>.
+                (Or click “Create legacy token”, which also works.) Copy it and paste it below. It proves you own the project; we use it to create your database and set up login emails.
               </p>
               {!schema.ready && <p className="mt-2 rounded-xl bg-brand-50 px-3 py-2 text-brand-800">Your database will be created when you click the button (takes ~30 seconds).</p>}
               <ActionForm action={completeSetup} className="mt-4 grid gap-3">
