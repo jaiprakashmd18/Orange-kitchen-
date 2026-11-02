@@ -300,6 +300,8 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PaymentSession
             state: address.state,
             pincode: address.pincode,
             delivery_instructions: address.delivery_instructions,
+            latitude: address.latitude ?? null,
+            longitude: address.longitude ?? null,
           }
         : null,
       serviceable_area_id: area?.id ?? null,

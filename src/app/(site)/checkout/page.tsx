@@ -29,6 +29,8 @@ export default async function CheckoutPage() {
           maps: mapsLink(settings),
           delivery_enabled: settings.delivery_enabled,
           takeaway_enabled: settings.takeaway_enabled,
+          lat: settings.latitude != null ? Number(settings.latitude) : null,
+          lng: settings.longitude != null ? Number(settings.longitude) : null,
         }}
         emailVerified={Boolean(user.email_confirmed_at || user.phone_confirmed_at)}
         paymentMethods={await availablePaymentMethods(settings)}

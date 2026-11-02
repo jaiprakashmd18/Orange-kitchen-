@@ -20,6 +20,9 @@ export const addressSchema = z.object({
   state: trimmed(80).min(2).default("Tamil Nadu"),
   pincode: pincodeSchema,
   delivery_instructions: trimmed(300).optional().transform((v) => v || null),
+  // Exact map pin (optional). Rough India bounds guard against junk values.
+  latitude: z.number().min(6).max(37).nullable().optional().transform((v) => v ?? null),
+  longitude: z.number().min(68).max(98).nullable().optional().transform((v) => v ?? null),
   is_default: z.boolean().default(false),
 });
 

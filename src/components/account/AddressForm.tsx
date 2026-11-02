@@ -4,10 +4,23 @@ import { useState, useTransition } from "react";
 import { saveAddress } from "@/app/(site)/account/actions";
 import { Spinner } from "@/components/ui/Spinner";
 import type { Address } from "@/lib/types";
+import { LocationPicker, type LatLng } from "./LocationPicker";
 
 type Fields = Omit<Address, "id" | "user_id">;
 
-export function AddressForm({ initial, defaults, onSaved, onCancel }: { initial?: Address; defaults?: Partial<Fields>; onSaved: (a: Address) => void; onCancel?: () => void }) {
+export function AddressForm({
+  initial,
+  defaults,
+  onSaved,
+  onCancel,
+  restaurant,
+}: {
+  initial?: Address;
+  defaults?: Partial<Fields>;
+  onSaved: (a: Address) => void;
+  onCancel?: () => void;
+  restaurant?: LatLng | null;
+}) {
   const [f, setF] = useState<Fields>({
     label: initial?.label ?? "Home",
     full_name: initial?.full_name ?? defaults?.full_name ?? "",
@@ -21,6 +34,8 @@ export function AddressForm({ initial, defaults, onSaved, onCancel }: { initial?
     pincode: initial?.pincode ?? "",
     delivery_instructions: initial?.delivery_instructions ?? "",
     is_default: initial?.is_default ?? false,
+    latitude: initial?.latitude ?? null,
+    longitude: initial?.longitude ?? null,
   });
   const [error, setError] = useState<string | null>(null);
   const [svc, setSvc] = useState<string | null>(null);
@@ -75,6 +90,14 @@ export function AddressForm({ initial, defaults, onSaved, onCancel }: { initial?
         </div>
       </div>
       {svc && <p className={`text-sm ${svc.startsWith("✓") ? "text-leaf" : "text-amber-800"}`}>{svc}</p>}
+      <div>
+        <span className="label">Exact location on map</span>
+        <LocationPicker
+          value={f.latitude != null && f.longitude != null ? { lat: Number(f.latitude), lng: Number(f.longitude) } : null}
+          onChange={(v) => setF((s) => ({ ...s, latitude: v?.lat ?? null, longitude: v?.lng ?? null }))}
+          restaurant={restaurant}
+        />
+      </div>
       <div>
         <label htmlFor="addr-instr" className="label">Delivery instructions (optional)</label>
         <textarea id="addr-instr" rows={2} maxLength={300} className="input" placeholder="e.g. Call on arrival, 2nd floor" value={f.delivery_instructions ?? ""} onChange={set("delivery_instructions")} />

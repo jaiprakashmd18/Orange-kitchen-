@@ -27,7 +27,7 @@ interface PickupOption {
 export interface CheckoutProps {
   addresses: Address[];
   profile: { full_name: string | null; phone: string | null };
-  restaurant: { name: string; logo_url: string | null; address: string; maps: string; delivery_enabled: boolean; takeaway_enabled: boolean };
+  restaurant: { name: string; logo_url: string | null; address: string; maps: string; delivery_enabled: boolean; takeaway_enabled: boolean; lat: number | null; lng: number | null };
   emailVerified: boolean;
   paymentMethods: ("upi" | "razorpay")[];
 }
@@ -168,6 +168,7 @@ export function CheckoutForm({ addresses: initialAddresses, profile, restaurant,
               <div className="mt-4">
                 <AddressForm
                   defaults={{ full_name: profile.full_name ?? "", phone: profile.phone ?? "" }}
+                  restaurant={restaurant.lat != null && restaurant.lng != null ? { lat: restaurant.lat, lng: restaurant.lng } : null}
                   onSaved={(a) => {
                     setAddresses((xs) => [a, ...xs.filter((x) => x.id !== a.id)]);
                     setAddressId(a.id);
@@ -188,6 +189,9 @@ export function CheckoutForm({ addresses: initialAddresses, profile, restaurant,
                           {[a.house, a.street, a.area, a.landmark, a.city, a.pincode].filter(Boolean).join(", ")}
                         </span>
                         {a.delivery_instructions && <span className="block text-xs text-charcoal-500">Note: {a.delivery_instructions}</span>}
+                        <span className={`mt-1 block text-xs ${a.latitude != null ? "text-leaf" : "text-amber-800"}`}>
+                          {a.latitude != null ? "📍 Exact location pinned" : "No map pin — add one (Edit in My Account → Addresses) for faster delivery"}
+                        </span>
                       </span>
                     </label>
                   </li>

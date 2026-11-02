@@ -196,6 +196,8 @@ export interface Address {
   state: string;
   pincode: string;
   delivery_instructions: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   is_default: boolean;
 }
 

@@ -30,7 +30,11 @@ export default async function RiderOrder({ params }: { params: Promise<{ id: str
   const settings = await getSettings();
   const a = order.delivery_address!;
   const dest = [a.house, a.street, a.area, a.landmark, a.city, a.pincode].filter(Boolean).join(", ");
-  const nav = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
+  // Exact customer pin when available (far more reliable than the typed address).
+  const pinned = a.latitude != null && a.longitude != null;
+  const nav = pinned
+    ? `https://www.google.com/maps/dir/?api=1&destination=${a.latitude},${a.longitude}&travelmode=two-wheeler`
+    : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
   const step = STEP[order.status];
   const paid = payment?.status === "captured";
 
@@ -61,6 +65,9 @@ export default async function RiderOrder({ params }: { params: Promise<{ id: str
         <h2 className="font-sans font-bold">Customer</h2>
         <p className="mt-1 text-lg font-semibold">{a.full_name}</p>
         <p className="text-sm">{dest}</p>
+        <p className={`mt-1 text-xs font-semibold ${pinned ? "text-leaf" : "text-amber-800"}`}>
+          {pinned ? "📍 Customer pinned their exact location — Navigate goes straight there" : "No map pin — Navigate uses the typed address; call if unsure"}
+        </p>
         {a.delivery_instructions && <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">Instructions: {a.delivery_instructions}</p>}
         <div className="mt-4 grid grid-cols-3 gap-2">
           <a href={telHref(a.phone)} className="btn-secondary"><Icon name="phone" className="h-4 w-4" /> Call</a>

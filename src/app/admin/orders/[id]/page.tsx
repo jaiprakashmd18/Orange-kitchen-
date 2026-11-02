@@ -204,6 +204,11 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ i
                 <span className="font-semibold">Deliver to:</span> {a.full_name}, {formatPhone(a.phone)}<br />
                 {[a.house, a.street, a.area, a.landmark, a.city, a.state, a.pincode].filter(Boolean).join(", ")}
                 {a.delivery_instructions && <span className="block text-charcoal-500">Note: {a.delivery_instructions}</span>}
+                {a.latitude != null && a.longitude != null ? (
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${a.latitude},${a.longitude}`} target="_blank" rel="noopener noreferrer" className="link mt-1 inline-block">📍 Open exact pin in Google Maps</a>
+                ) : (
+                  <span className="mt-1 block text-xs text-amber-800">No map pin from customer</span>
+                )}
               </address>
             ) : (
               <p className="mt-3"><span className="font-semibold">Pickup:</span> {formatDate(order.pickup_date)} at {formatClock(order.pickup_time)}</p>
