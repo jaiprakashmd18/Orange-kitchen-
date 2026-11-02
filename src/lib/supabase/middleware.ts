@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { publicEnv, isSupabaseConfigured } from "@/lib/env";
 
-const PROTECTED_PREFIXES = ["/account", "/checkout", "/admin", "/delivery", "/orders"];
+const PROTECTED_PREFIXES = ["/account", "/checkout", "/admin", "/delivery", "/orders", "/kot"];
 
 /** Refreshes the auth session cookie and redirects anonymous users away from protected areas. */
 export async function updateSession(request: NextRequest) {

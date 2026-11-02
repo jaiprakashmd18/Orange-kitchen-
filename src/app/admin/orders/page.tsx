@@ -89,7 +89,12 @@ export default async function AdminOrders({ searchParams }: { searchParams: Prom
                   <td>{o.fulfillment === "delivery" ? "Delivery" : <>Takeaway<span className="block text-xs text-charcoal-500">{o.pickup_date} {o.pickup_time?.slice(0, 5)}</span></>}</td>
                   <td><Badge tone={STATUS_TONE[o.status]}>{STATUS_LABEL[o.status]}</Badge></td>
                   <td className="text-xs uppercase">{o.payments?.[0]?.status?.replace("_", " ") ?? "—"}</td>
-                  <td className="text-right font-semibold">{formatINR(o.total_amount)}</td>
+                  <td className="text-right font-semibold">
+                    {formatINR(o.total_amount)}
+                    {!["pending_payment", "payment_failed", "expired"].includes(o.status) && (
+                      <a href={`/kot/${o.id}?auto=1`} target="_blank" rel="noopener" className="ml-2 text-xs font-normal text-brand-700 hover:underline" title="Print kitchen ticket">🖨 KOT</a>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

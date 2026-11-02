@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth";
 import { getSettings } from "@/lib/data";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { OrderingSwitch } from "@/components/admin/OrderingSwitch";
+import { OrderAlarm } from "@/components/admin/OrderAlarm";
 import { after } from "next/server";
 import { runMaintenance } from "@/lib/maintenance";
 
@@ -40,6 +41,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             {roles.includes("admin") && <OrderingSwitch on={false} compact />}
           </div>
         )}
+        <OrderAlarm />
         <main id="main" className="p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>

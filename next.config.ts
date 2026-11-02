@@ -34,6 +34,7 @@ const nextConfig: NextConfig = {
       { source: "/delivery/:path*", headers: noindex },
       { source: "/delivery", headers: noindex },
       { source: "/setup", headers: noindex },
+      { source: "/kot/:path*", headers: noindex },
     ];
   },
 };

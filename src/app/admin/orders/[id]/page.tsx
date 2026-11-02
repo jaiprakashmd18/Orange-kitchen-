@@ -39,7 +39,7 @@ export default async function AdminOrderDetail({ params }: { params: Promise<{ i
       <PageHeader
         title={`Order #${order.order_number}`}
         description={<>Placed {formatDateTime(order.created_at)} · <Link href="/admin/orders" className="link">All orders</Link></>}
-        actions={<><Badge tone={STATUS_TONE[order.status]} className="px-3 py-1 text-sm">{STATUS_LABEL[order.status]}</Badge><Badge className="px-3 py-1 text-sm">{order.fulfillment === "delivery" ? "Delivery" : "Takeaway"}</Badge></>}
+        actions={<><a href={`/kot/${order.id}?auto=1`} target="_blank" rel="noopener" className="btn-secondary btn-sm">🖨 Print kitchen ticket</a><Badge tone={STATUS_TONE[order.status]} className="px-3 py-1 text-sm">{STATUS_LABEL[order.status]}</Badge><Badge className="px-3 py-1 text-sm">{order.fulfillment === "delivery" ? "Delivery" : "Takeaway"}</Badge></>}
       />
 
       <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
