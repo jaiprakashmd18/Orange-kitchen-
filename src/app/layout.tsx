@@ -63,7 +63,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser();
   return (
-    <html lang="en-IN" className={`${sans.variable} ${display.variable}`}>
+    <html lang="en-IN" data-scroll-behavior="smooth" className={`${sans.variable} ${display.variable}`}>
       <body className="min-h-dvh font-sans">
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2">
           Skip to content

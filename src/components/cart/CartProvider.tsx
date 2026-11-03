@@ -78,6 +78,8 @@ export function CartProvider({ userId, children }: { userId: string | null; chil
       /* storage unavailable */
     }
     if (!userId) {
+      // localStorage only exists in the browser, so the saved cart is loaded after mount.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setState(local);
       setReady(true);
       return;

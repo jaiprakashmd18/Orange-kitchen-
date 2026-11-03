@@ -35,7 +35,9 @@ export function LocationPicker({ value, onChange, restaurant }: { value: LatLng 
   // Latest value, read by the (async) map initialiser so a GPS fix that
   // arrives before the map loads is never overwritten by the default spot.
   const valueRef = useRef(value);
-  valueRef.current = value;
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
   // Create the map once it is shown
   useEffect(() => {

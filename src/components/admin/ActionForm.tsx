@@ -26,14 +26,16 @@ export function ActionForm({
 }) {
   const [state, formAction] = useActionState<ActionResult, FormData>(action, { ok: false, error: null });
   const ref = useRef<HTMLFormElement>(null);
-  const [toast, setToast] = useState<ActionResult | null>(null);
+  // The toast shows the latest result until it is dismissed (or, for
+  // successes, until it auto-hides). Each submit returns a new state object.
+  const [dismissed, setDismissed] = useState<ActionResult | null>(null);
+  const toast = (state.error || state.ok) && dismissed !== state ? state : null;
+  const setToast = (v: null) => v === null && setDismissed(state);
 
   useEffect(() => {
-    if (!state.error && !state.ok) return;
-    setToast(state);
     if (state.ok && resetOnSuccess) ref.current?.reset();
     if (state.ok) {
-      const t = setTimeout(() => setToast(null), 4000);
+      const t = setTimeout(() => setDismissed(state), 4000);
       return () => clearTimeout(t);
     }
   }, [state, resetOnSuccess]);

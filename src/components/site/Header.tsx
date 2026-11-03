@@ -35,7 +35,12 @@ export function Header({
   const [scrolled, setScrolled] = useState(false);
   const { count, ready } = useCart();
 
-  useEffect(() => setOpen(false), [pathname]);
+  // Close the mobile menu when the route changes (adjust state during render).
+  const [openedOn, setOpenedOn] = useState(pathname);
+  if (openedOn !== pathname) {
+    setOpenedOn(pathname);
+    setOpen(false);
+  }
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();

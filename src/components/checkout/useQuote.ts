@@ -36,10 +36,7 @@ export function useQuote(input: {
   });
 
   useEffect(() => {
-    if (input.enabled === false || input.lines.length === 0) {
-      setData(null);
-      return;
-    }
+    if (input.enabled === false || input.lines.length === 0) return;
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
       setLoading(true);
@@ -78,5 +75,6 @@ export function useQuote(input: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, input.enabled]);
 
-  return { data, error, loading };
+  const active = input.enabled !== false && input.lines.length > 0;
+  return { data: active ? data : null, error: active ? error : null, loading: active && loading };
 }

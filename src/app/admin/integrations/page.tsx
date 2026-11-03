@@ -26,6 +26,16 @@ function Card({ title, status, children, help }: { title: string; status: React.
   );
 }
 
+function Remove({ action, show }: { action: typeof saveRazorpay; show: boolean }) {
+  if (!show) return null;
+  return (
+    <ActionForm action={action} confirmMessage="Disconnect this integration?">
+      <input type="hidden" name="remove" value="1" />
+      <SubmitButton className="btn-ghost btn-sm text-chilli">Disconnect</SubmitButton>
+    </ActionForm>
+  );
+}
+
 export default async function IntegrationsPage() {
   await requireRole(["admin"], "/admin/integrations");
   const [c, st] = await Promise.all([getConfig(), getIntegrationStatus()]);
@@ -44,14 +54,6 @@ export default async function IntegrationsPage() {
       />
     </label>
   );
-  const Remove = ({ action, show }: { action: typeof saveRazorpay; show: boolean }) =>
-    show ? (
-      <ActionForm action={action} confirmMessage="Disconnect this integration?">
-        <input type="hidden" name="remove" value="1" />
-        <SubmitButton className="btn-ghost btn-sm text-chilli">Disconnect</SubmitButton>
-      </ActionForm>
-    ) : null;
-
   return (
     <div className="max-w-3xl space-y-6">
       <PageHeader

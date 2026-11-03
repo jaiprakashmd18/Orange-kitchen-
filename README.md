@@ -15,7 +15,7 @@ delivery management, live order tracking, notifications, admin dashboard, report
 | Delivery riders | `/delivery/*` |
 
 ## Stack
-Next.js 15 (App Router, TypeScript) · Tailwind CSS · Framer Motion · Supabase (Postgres, Auth, Storage,
+Next.js 16 (App Router, TypeScript) · Tailwind CSS · Framer Motion · Supabase (Postgres, Auth, Storage,
 Realtime, RLS) · Razorpay · Resend (email, optional) · WhatsApp Cloud API (optional) · Vercel.
 
 ## Easy setup — no code, no env variables to copy
@@ -30,7 +30,7 @@ Full guide: [docs/SETUP.md](docs/SETUP.md). Environment variables still work and
 | Command | What it does |
 |---|---|
 | `npm run setup` | Migrate DB, create admin, configure Auth, check keys (also runs automatically in `build`) |
-| `npm run dev` / `build` / `start` | Next.js (`build` runs setup first) |
+| `npm run dev` / `build` / `start` | Next.js 16 (`build` runs setup first) |
 | `npm run typecheck` / `lint` | TypeScript & ESLint |
 | `npm test` | Unit tests (pricing engine, coupons, opening hours, pickup slots) |
 | `npm run db:test` | Applies all migrations to a throwaway local Postgres and runs SQL tests for the order state machine, payment idempotency, atomic order creation and RLS isolation |

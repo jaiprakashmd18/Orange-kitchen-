@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
@@ -13,6 +13,32 @@ import { createClient } from "@/lib/supabase/client";
 // per device; the choice is remembered.
 
 const PREF = "ok-order-alerts";
+const PREF_EVENT = "ok-order-alerts-change";
+
+// The on/off choice lives in localStorage (per device).
+function readPref() {
+  try {
+    return localStorage.getItem(PREF) === "on";
+  } catch {
+    return false;
+  }
+}
+function writePref(on: boolean) {
+  try {
+    localStorage.setItem(PREF, on ? "on" : "off");
+  } catch {
+    /* ignore */
+  }
+  window.dispatchEvent(new Event(PREF_EVENT));
+}
+function subscribePref(cb: () => void) {
+  window.addEventListener(PREF_EVENT, cb);
+  window.addEventListener("storage", cb);
+  return () => {
+    window.removeEventListener(PREF_EVENT, cb);
+    window.removeEventListener("storage", cb);
+  };
+}
 const RING_EVERY_MS = 15_000;
 
 interface Pending {
@@ -44,7 +70,8 @@ function ring(ctx: AudioContext) {
 }
 
 export function OrderAlarm() {
-  const [enabled, setEnabled] = useState(false);
+  const enabled = useSyncExternalStore(subscribePref, readPref, () => false);
+  const [armed, setArmed] = useState(false); // sound unlocked by a tap on this page
   const [pending, setPending] = useState<Pending>({ orders: 0, upi: 0 });
   const [snoozedAt, setSnoozedAt] = useState(0);
   const ctxRef = useRef<AudioContext | null>(null);
@@ -61,18 +88,9 @@ export function OrderAlarm() {
     setPending({ orders: o.count ?? 0, upi: p.count ?? 0 });
   }, []);
 
-  // Restore preference
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(PREF) === "on") setEnabled(true);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
   // Live updates
   useEffect(() => {
-    refresh();
+    const first = setTimeout(refresh, 0);
     const supabase = createClient();
     const ch = supabase
       .channel(`order-alarm-${Math.random().toString(36).slice(2)}`)
@@ -81,6 +99,7 @@ export function OrderAlarm() {
       .subscribe();
     const poll = setInterval(refresh, 60_000); // safety net if the socket drops
     return () => {
+      clearTimeout(first);
       clearInterval(poll);
       supabase.removeChannel(ch);
     };
@@ -152,24 +171,15 @@ export function OrderAlarm() {
     ctxRef.current ??= new AC();
     await ctxRef.current.resume().catch(() => undefined);
     ring(ctxRef.current); // test ring (also unlocks audio on iOS/Android)
+    setArmed(true);
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       await Notification.requestPermission().catch(() => undefined);
     }
-    try {
-      localStorage.setItem(PREF, "on");
-    } catch {
-      /* ignore */
-    }
-    setEnabled(true);
+    writePref(true);
   }
 
   function turnOff() {
-    try {
-      localStorage.setItem(PREF, "off");
-    } catch {
-      /* ignore */
-    }
-    setEnabled(false);
+    writePref(false);
   }
 
   // Audio contexts can't be created before a tap; after a reload with alerts
@@ -180,12 +190,13 @@ export function OrderAlarm() {
       const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       ctxRef.current = new AC();
       ctxRef.current.resume().catch(() => undefined);
+      setArmed(true);
     };
     window.addEventListener("pointerdown", arm, { once: true });
     return () => window.removeEventListener("pointerdown", arm);
   }, [enabled]);
 
-  const needsTap = enabled && !ctxRef.current;
+  const needsTap = enabled && !armed;
 
   return (
     <>

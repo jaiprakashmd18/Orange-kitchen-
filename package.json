@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "node scripts/setup.mjs --build && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node --conditions=react-server --import tsx --test tests/*.test.ts tests/*.test.mts",
     "db:test": "bash scripts/test-migrations.sh",
@@ -16,7 +16,7 @@
     "setup": "node scripts/setup.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.9"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -25,12 +25,12 @@
     "dotenv": "^16.4.7",
     "framer-motion": "^11.18.2",
     "leaflet": "^1.9.4",
-    "next": "^15.5.28",
+    "next": "^16.4.4",
     "nodemailer": "^10.3.1",
     "postgres": "^3.4.5",
     "qrcode": "^1.5.4",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "server-only": "^0.0.1",
     "zod": "^4.6.7"
   },
@@ -43,7 +43,7 @@
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^15.5.28",
+    "eslint-config-next": "^16.4.4",
     "postcss": "^8.5.32",
     "sharp": "^0.35.5",
     "tailwindcss": "^3.4.19",

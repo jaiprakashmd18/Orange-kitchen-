@@ -10,7 +10,7 @@
    ├─ Server Actions     — admin/account mutations; every action re-checks the role server-side
    ├─ Route Handlers     — /api/cart, /api/checkout/quote, /api/orders, /api/payments/*,
    │                       /api/webhooks/razorpay, /api/webhooks/delivery/[provider], /api/cron/*
-   └─ middleware.ts      — refreshes the auth cookie; redirects anonymous users from protected areas
+   └─ proxy.ts           — refreshes the auth cookie; redirects anonymous users from protected areas
    │
    ├──► Supabase Postgres (RLS on every table, order state machine in SQL)
    ├──► Supabase Auth (email+password, email verification, reset, optional phone OTP)
@@ -53,7 +53,7 @@ supabase/migrations/      0100 schema · 0200 functions/state machine · 0300 RL
 scripts/                  test-migrations.sh (local Postgres + Supabase stubs), generate-icons.mjs
 tests/                    *.test.ts unit tests; db/*.sql database tests
 public/                   sw.js (service worker), offline.html, icons/
-src/middleware.ts         session refresh + protected-route redirects
+src/proxy.ts              session refresh + protected-route redirects
 src/app/
   layout.tsx              fonts, metadata, cart provider, service-worker registration
   (site)/                 public + customer pages (header/footer, Restaurant JSON-LD)
